@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const SOLO_OPEX_SUGGESTIONS = [
   { key: "leadGen",   label: "Lead Generation",   suggested: 12, min: 5,  max: 25, hint: "MREA benchmark: 12%" },
-  { key: "marketing", label: "Marketing & Signs",  suggested: 5,  min: 2,  max: 12, hint: "Suggested: 3–6%" },
+  { key: "marketing", label: "Marketing & Signs",  suggested: 5,  min: 2,  max: 12, hint: "Suggested: 3â6%" },
   { key: "techTools", label: "Tech & Tools",       suggested: 3,  min: 1,  max: 8,  hint: "CRM, IDX, showing software" },
   { key: "adminMisc", label: "Admin & Misc",       suggested: 5,  min: 2,  max: 10, hint: "Postage, printing, dues" },
 ];
@@ -67,7 +67,7 @@ const FunnelStep = ({ label, value, color, isLast }) => (
       <div style={{ fontSize:"22px", fontWeight:"800", fontFamily:"monospace", lineHeight:1 }}>{value}</div>
       <div style={{ fontSize:"10px", marginTop:"3px", opacity:0.9, fontWeight:"600" }}>{label}</div>
     </div>
-    {!isLast && <div style={{ fontSize:"14px", color:"#d1d5db", margin:"3px 0" }}>▼</div>}
+    {!isLast && <div style={{ fontSize:"14px", color:"#d1d5db", margin:"3px 0" }}>â¼</div>}
   </div>
 );
 
@@ -118,7 +118,7 @@ export default function App() {
   const totalApptWk = totalAppts / 52;
   const totalApptMo = totalAppts / 12;
 
-  const royaltyAmt    = agentGrossNeeded * royFactor;
+  const royaltyAmt = Math.min(agentGrossNeeded * 0.06, 3000);
   const agentAfterKW  = agentGrossNeeded - capAmount - royaltyAmt - eAndO;
   const totalOpexAmt  = agentAfterKW * opexPct;
   const netIncome     = agentAfterKW - totalOpexAmt;
@@ -145,14 +145,14 @@ export default function App() {
           </div>
           <div>
             <div style={{ fontSize:"19px", fontWeight:"900", color:"#fff", letterSpacing:"-0.02em" }}>MREA Goal Planner</div>
-            <div style={{ fontSize:"10px", color:"rgba(255,255,255,.75)", letterSpacing:"0.1em", textTransform:"uppercase" }}>Solo Agent · Income Goal → Weekly Appointments</div>
+            <div style={{ fontSize:"10px", color:"rgba(255,255,255,.75)", letterSpacing:"0.1em", textTransform:"uppercase" }}>Solo Agent Â· Income Goal â Weekly Appointments</div>
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth:"1140px", margin:"0 auto", padding:"18px 16px" }}>
         <Card top={C.red} style={{ marginBottom:"18px" }}>
-          <SecTitle>🎯 Your Goal & Business Mix</SecTitle>
+          <SecTitle>ð¯ Your Goal & Business Mix</SecTitle>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"24px" }}>
             <Slider label="Net Income Goal" value={incomeGoal} min={25000} max={500000} step={5000} onChange={setIncomeGoal} format="$" hint="Take-home after all expenses" />
             <Slider label="Seller Side % of Business" value={sellerPct} min={0} max={100} step={5} onChange={setSellerPct} suffix="%" hint={`Buyer side auto-set to ${buyerPct}%`} />
@@ -164,7 +164,7 @@ export default function App() {
 
           <div>
             <div style={{ background:C.sell, color:"#fff", borderRadius:"8px 8px 0 0", padding:"10px 16px", fontSize:"11px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase" }}>
-              🏡 Seller Side · {sellerPct}%
+              ð¡ Seller Side Â· {sellerPct}%
             </div>
             <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderTop:"none", borderRadius:"0 0 8px 8px", padding:"16px 18px", marginBottom:"14px" }}>
               <div style={{ textAlign:"center", paddingBottom:"12px", borderBottom:`1px solid ${C.border}`, marginBottom:"14px" }}>
@@ -188,21 +188,21 @@ export default function App() {
               </div>
               <div style={{ marginTop:"10px", background:C.light, borderRadius:"6px", padding:"8px 10px" }}>
                 <div style={{ fontSize:"10px", color:C.gray, marginBottom:"3px", fontWeight:"600" }}>Conversion Assumptions</div>
-                <div style={{ fontSize:"11px", color:C.sub }}>Appointment → Listing Agreement: <strong>75%</strong></div>
-                <div style={{ fontSize:"11px", color:C.sub }}>Listing Agreement → Closed: <strong>75%</strong></div>
+                <div style={{ fontSize:"11px", color:C.sub }}>Appointment â Listing Agreement: <strong>75%</strong></div>
+                <div style={{ fontSize:"11px", color:C.sub }}>Listing Agreement â Closed: <strong>75%</strong></div>
               </div>
             </div>
           </div>
 
           <div>
             <Card top={C.red} style={{ textAlign:"center" }}>
-              <SecTitle>📊 GCI Needed to Hit Your Goal</SecTitle>
+              <SecTitle>ð GCI Needed to Hit Your Goal</SecTitle>
               <div style={{ fontSize:"40px", fontWeight:"900", color:C.red, fontFamily:"monospace", letterSpacing:"-0.02em", lineHeight:1 }}>{fmt$(gciNeeded)}</div>
               <div style={{ fontSize:"11px", color:C.gray, marginTop:"6px" }}>Gross Commission Income Required</div>
             </Card>
 
             <Card top="#111827">
-              <SecTitle>📅 Appointments You Need Each Week</SecTitle>
+              <SecTitle>ð Appointments You Need Each Week</SecTitle>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"8px", marginBottom:"12px" }}>
                 <WeeklyStat label="Listing Appts / Wk" value={ceil1(sellApptWk)} color={C.sell} bg={C.sellLight} />
                 <WeeklyStat label="Buyer Appts / Wk"   value={ceil1(buyApptWk)}  color={C.buy}  bg={C.buyLight}  />
@@ -210,38 +210,67 @@ export default function App() {
               <div style={{ background:"#111827", borderRadius:"10px", padding:"16px", textAlign:"center" }}>
                 <div style={{ fontSize:"10px", color:"#9ca3af", textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:"4px" }}>Total Appointments Per Week</div>
                 <div style={{ fontSize:"52px", fontWeight:"900", color:"#fff", fontFamily:"monospace", letterSpacing:"-0.02em", lineHeight:1 }}>{ceil1(totalApptWk)}</div>
-                <div style={{ fontSize:"13px", color:"#9ca3af", marginTop:"8px" }}>{rc(totalApptMo)} appts / month · {rc(totalAppts)} / year</div>
+                <div style={{ fontSize:"13px", color:"#9ca3af", marginTop:"8px" }}>{rc(totalApptMo)} appts / month Â· {rc(totalAppts)} / year</div>
               </div>
             </Card>
 
             <Card top="#374151">
-              <SecTitle>💵 Income Waterfall</SecTitle>
+              <SecTitle>ðµ Income Waterfall</SecTitle>
               <StatRow label="GCI Required"              value={fmt$(gciNeeded)}     bold />
               <StatRow label="Cap to KW"                  value={`(${fmt$(capAmount)})`}   indent color={C.gray} />
-              <StatRow label={`Royalty (${royaltyPct}%)`} value={`(${fmt$(royaltyAmt)})`}  indent color={C.gray} />
+              <StatRow label={royaltyAmt === 3000 ? "Royalty (6% — 🎉 Capped!)" : "Royalty (6%)"} value={`(${fmt$(royaltyAmt)})`}  indent color={C.gray} />
               <StatRow label="E&O / Fees"                 value={`(${fmt$(eAndO)})`}        indent color={C.gray} />
-              <StatRow label="Agent Net After KW"         value={fmt$(agentAfterKW)}   bold />
+              <StatRow label={royaltyAmt === 3000 && agentGrossNeeded > capAmount ? "👑 Agent Net After KW" : "Agent Net After KW"}         value={fmt$(agentAfterKW)}   bold />
               <StatRow label={`Operating Expenses (${(opexPct*100).toFixed(0)}%)`} value={`(${fmt$(totalOpexAmt)})`} indent color={C.red} />
               <div style={{ height:"6px" }} />
               <StatRow label="NET INCOME" value={fmt$(netIncome)} bold color={netIncome>=0?"#16a34a":C.red} />
               <div style={{ marginTop:"10px", textAlign:"center" }}>
                 <span style={{ fontSize:"11px", fontWeight:"700", color:health.color, background:`${health.color}18`, padding:"3px 14px", borderRadius:"20px", letterSpacing:"0.06em", textTransform:"uppercase" }}>
-                  ● {health.label} · {r1(netPct)}% Net Margin
+                  â {health.label} Â· {r1(netPct)}% Net Margin
                 </span>
               </div>
             </Card>
 
+            {royaltyAmt === 3000 && agentGrossNeeded > capAmount && (
+              <div style={{
+                background: "#CC0000",
+                color: "white",
+                padding: "16px 20px",
+                borderRadius: 10,
+                border: "2px solid #f59e0b",
+                marginBottom: 12,
+                position: "relative"
+              }}>
+                <div style={{
+                  position: "absolute",
+                  top: 8,
+                  right: 12,
+                  background: "#f59e0b",
+                  color: "#1f2937",
+                  fontWeight: 700,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 12
+                }}>👑 100% Commission</div>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>🎉 Congratulations — You're a CAPPER!</div>
+                <div style={{ fontSize: 14 }}>You've hit your cap and your royalty max. Every dollar from here earns at 100% commission.</div>
+              </div>
+            )}
+
             <Card top={C.gray}>
-              <SecTitle>🏢 KW Splits</SecTitle>
+              <SecTitle>ð¢ KW Splits</SecTitle>
               <Slider label="Cap Amount"   value={capAmount}  min={0}   max={36000} step={500} onChange={setCapAmount}  format="$" />
-              <Slider label="Royalty Rate" value={royaltyPct} min={0}   max={6}     step={0.5} onChange={setRoyaltyPct} suffix="%" hint="Capped at 6% of agent gross" />
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 0", fontSize:14 }}>
+                <span style={{ color:"#374151" }}>{royaltyAmt === 3000 ? "Royalty (6% — 🎉 Capped!)" : "Royalty (6%)"}</span>
+                <span style={{ fontFamily:"ui-monospace, SFMono-Regular, Menlo, monospace", color:"#374151", fontWeight:600 }}>{royaltyAmt === 3000 ? "$3,000" : fmt$(royaltyAmt)}</span>
+              </div>
               <Slider label="E&O / Fees"   value={eAndO}      min={0}   max={5000}  step={100} onChange={setEAndO}      format="$" />
             </Card>
           </div>
 
           <div>
             <div style={{ background:C.buy, color:"#fff", borderRadius:"8px 8px 0 0", padding:"10px 16px", fontSize:"11px", fontWeight:"800", letterSpacing:"0.12em", textTransform:"uppercase" }}>
-              🔑 Buyer Side · {buyerPct}%
+              ð Buyer Side Â· {buyerPct}%
             </div>
             <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderTop:"none", borderRadius:"0 0 8px 8px", padding:"16px 18px", marginBottom:"14px" }}>
               <div style={{ textAlign:"center", paddingBottom:"12px", borderBottom:`1px solid ${C.border}`, marginBottom:"14px" }}>
@@ -265,15 +294,15 @@ export default function App() {
               </div>
               <div style={{ marginTop:"10px", background:C.light, borderRadius:"6px", padding:"8px 10px" }}>
                 <div style={{ fontSize:"10px", color:C.gray, marginBottom:"3px", fontWeight:"600" }}>Conversion Assumptions</div>
-                <div style={{ fontSize:"11px", color:C.sub }}>Appointment → Buyer Agreement: <strong>75%</strong></div>
-                <div style={{ fontSize:"11px", color:C.sub }}>Buyer Agreement → Closed: <strong>75%</strong></div>
+                <div style={{ fontSize:"11px", color:C.sub }}>Appointment â Buyer Agreement: <strong>75%</strong></div>
+                <div style={{ fontSize:"11px", color:C.sub }}>Buyer Agreement â Closed: <strong>75%</strong></div>
               </div>
             </div>
 
             <Card top={C.gray}>
-              <SecTitle>📊 Solo Agent Operating Expenses</SecTitle>
+              <SecTitle>ð Solo Agent Operating Expenses</SecTitle>
               <div style={{ background:"#fef9c3", borderRadius:"6px", padding:"8px 10px", marginBottom:"12px", fontSize:"11px", color:"#92400e" }}>
-                💡 Pre-set to MREA benchmarks for new/solo agents.
+                ð¡ Pre-set to MREA benchmarks for new/solo agents.
               </div>
               {SOLO_OPEX_SUGGESTIONS.map(item => (
                 <Slider key={item.key} label={item.label} value={opex[item.key]}
@@ -282,7 +311,7 @@ export default function App() {
               <div style={{ borderTop:`2px solid ${C.border}`, marginTop:"6px", paddingTop:"8px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <span style={{ fontSize:"12px", fontWeight:"700", color:C.sub }}>Total OpEx</span>
                 <span style={{ fontSize:"14px", fontWeight:"800", color: (opexPct*100)<=30?"#16a34a":C.red, fontFamily:"monospace" }}>
-                  {(opexPct*100).toFixed(0)}% {(opexPct*100)<=30?"✓":"⚠ Over 30%"}
+                  {(opexPct*100).toFixed(0)}% {(opexPct*100)<=30?"â":"â  Over 30%"}
                 </span>
               </div>
             </Card>
@@ -290,7 +319,7 @@ export default function App() {
         </div>
 
         <Card top={C.red}>
-          <SecTitle>📋 Annual Production Summary</SecTitle>
+          <SecTitle>ð Annual Production Summary</SecTitle>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:"10px" }}>
             {[
               { label:"Total GCI Needed",     value: fmt$(gciNeeded),              color: C.red  },
@@ -310,7 +339,7 @@ export default function App() {
       </div>
 
       <div style={{ textAlign:"center", padding:"14px", fontSize:"10px", color:"#9ca3af" }}>
-        Millionaire Real Estate Agent Economic Model · Keller Williams · 75% Appt→Agreement · 75% Agreement→Close
+        Millionaire Real Estate Agent Economic Model Â· Keller Williams Â· 75% ApptâAgreement Â· 75% AgreementâClose
       </div>
     </div>
   );
