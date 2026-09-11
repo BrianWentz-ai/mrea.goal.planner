@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e2433">
+<meta name="description" content="Build the personal income target that funds your life. A Life by Design calculator from The Ascending Agent.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Life by Design | The Ascending Agent</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body class="first-step">
+<header><div class="header-inner"><button class="brand" id="home" aria-label="Life by Design home"><span class="brand-mark" aria-hidden="true">L</span><span><strong>Life by Design</strong><small>The Ascending Agent</small></span></button><div class="header-right"><span class="save-status" id="saveStatus" role="status"></span><details id="planMenu"><summary aria-label="Plan options">&#8943;</summary><div class="menu"><button data-action="export">Save a backup</button><button data-action="import">Restore a backup</button><button data-action="reset" class="danger">Start a new plan</button></div></details></div></div></header>
+<main><div id="storageWarning" class="storage-warning" hidden>Your browser is blocking saved data. The calculator still works, but your entries will be lost when this page closes. <button data-action="export">Save a backup</button></div><section class="intro"><div class="eyebrow">Step 01 / Your business starts here</div><h1>Your life comes first.</h1><p>What would it cost to live the life you actually want? Give each goal a number. We will build the business around it.</p></section><nav class="progress" id="progress" aria-label="Plan sections"></nav><div class="mobile-progress"><div class="mobile-step-top"><label for="stepPicker" id="stepLabel">STEP 1 OF 7</label><select id="stepPicker" aria-label="Jump to a plan section"></select></div><div class="progress-meter" aria-hidden="true"><span id="progressFill"></span></div></div><div class="workspace"><section id="stage" aria-label="Current plan section"></section><aside class="summary-aside"><div class="summary"><div class="eyebrow">Your annual life target</div><div class="total-number" id="annualTotal">$0</div><div class="monthly" id="monthlyTotal">$0 per month</div><hr><div id="summaryRows"></div><hr><p class="summary-note">Personal income, before taxes. Business expenses, commission splits, and production targets come in the next module.</p></div><div class="privacy">Your entries stay in this browser. There is no account or cloud sync. Use Plan options to save or restore a backup.</div></aside></div><div class="privacy-inline">Planning estimates only. Confirm your tax assumptions with your tax professional.</div></main>
+<div class="mobile-dock"><button class="dock-back" id="dockBack" aria-label="Previous section">&#8592;</button><div class="dock-total"><small>Annual life target</small><strong id="dockTotal">$0</strong></div><button class="btn primary dock-next" id="dockNext">Continue &#8594;</button></div><input id="importFile" type="file" accept="application/json,.json" hidden><div id="toast" class="toast" role="status" hidden></div><noscript><p style="padding:24px">This calculator needs JavaScript. Open the hosted website in your browser, not a file preview.</p></noscript>
+<script src="./app.js"></script>
+</body>
+</html>
