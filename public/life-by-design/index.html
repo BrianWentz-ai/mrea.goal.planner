@@ -4,17 +4,44 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e2433">
-<meta name="description" content="Build the personal income target that funds your life. A Life by Design calculator from The Ascending Agent.">
+<meta name="description" content="Build the personal income target that funds your life. A Life by Design business planning module from The Ascending Agent.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Life by Design | The Ascending Agent</title>
 <link rel="stylesheet" href="./styles.css">
-<link rel="stylesheet" href="./revisions.css?v=20260919"></head>
+<link rel="stylesheet" href="./revisions.css?v=20260919b">
+</head>
 <body class="first-step">
 <header><div class="header-inner"><button class="brand" id="home" aria-label="Life by Design home"><span class="brand-mark" aria-hidden="true">L</span><span><strong>Life by Design</strong><small>The Ascending Agent</small></span></button><div class="header-right"><span class="save-status" id="saveStatus" role="status"></span><details id="planMenu"><summary aria-label="Plan options">&#8943;</summary><div class="menu"><button data-action="export">Save a backup</button><button data-action="import">Restore a backup</button><button data-action="reset" class="danger">Start a new plan</button></div></details></div></div></header>
-<main><div id="storageWarning" class="storage-warning" hidden>Your browser is blocking saved data. The calculator still works, but your entries will be lost when this page closes. <button data-action="export">Save a backup</button></div><section class="intro"><div class="eyebrow">Welcome, agents / The Ascending Agent</div><h1>Build a Business That Funds Your Life by Design.</h1><p>First, put a number on the life you want. Then connect that number to the business results and weekly actions that support it.</p><ol class="journey"><li><b>Life by Design</b><span>Establish your personal income target.</span></li><li><b>Economic Model</b><span>Calculate business costs, closings, and appointments.</span></li><li><b>GPS Business Plan</b><span>Turn goals into priorities and strategies.</span></li><li><b>36/72 Touch Plan</b><span>Build relationships through intentional touches.</span></li><li><b>Time Blocking</b><span>Schedule lead generation and follow-up.</span></li><li><b>Accountability</b><span>Track actions, results, and adjustments.</span></li></ol><p class="journey-note">Start here with six Life by Design steps, followed by your final summary. GPS, campaign building, time blocking, and accountability are the next stages being developed.</p><details class="welcome-overview"><summary>What will the six Life by Design steps calculate?</summary><ol><li><b>Living expenses:</b> your basic monthly and yearly costs.</li><li><b>Safety and freedom:</b> reserves and extra debt reduction.</li><li><b>Lifestyle:</b> travel, experiences, and upgrades.</li><li><b>Giving:</b> the people and causes you want to support.</li><li><b>Future goals:</b> savings for health, retirement, education, and milestones.</li><li><b>Taxes:</b> a monthly and yearly self-employment tax reserve.</li></ol><p>Your final summary combines these into the income target your business must fund.</p></details></section><nav class="progress" id="progress" aria-label="Plan sections"></nav><div class="mobile-progress"><div class="mobile-step-top"><label for="stepPicker" id="stepLabel">STEP 1 OF 7</label><select id="stepPicker" aria-label="Jump to a plan section"></select></div><div class="progress-meter" aria-hidden="true"><span id="progressFill"></span></div></div><div class="workspace"><section id="stage" aria-label="Current plan section"></section><aside class="summary-aside"><div class="summary"><div class="eyebrow">Your annual life target</div><div class="total-number" id="annualTotal">$0</div><div class="monthly" id="monthlyTotal">$0 per month</div><hr><div id="summaryRows"></div><hr><p class="summary-note">Your owner income target includes your tax reserve. The next module adds business costs to calculate the gross commission income needed.</p></div><div class="privacy">Your entries stay in this browser. There is no account or cloud sync. Use Plan options to save or restore a backup.</div></aside></div><div class="privacy-inline">Planning estimates only. Confirm your tax assumptions with your tax professional.</div></main>
-<div class="mobile-dock"><button class="dock-back" id="dockBack" aria-label="Previous section">&#8592;</button><div class="dock-total"><small>Annual life target</small><strong id="dockTotal">$0</strong></div><button class="btn primary dock-next" id="dockNext">Continue &#8594;</button></div><input id="importFile" type="file" accept="application/json,.json" hidden><div id="toast" class="toast" role="status" hidden></div><noscript><p style="padding:24px">This calculator needs JavaScript. Open the hosted website in your browser, not a file preview.</p></noscript>
-<script src="./app.js"></script>
-
+<main>
+<div id="storageWarning" class="storage-warning" hidden>Your browser is blocking saved data. The calculator still works, but your entries will be lost when this page closes. <button data-action="export">Save a backup</button></div>
+<section class="intro">
+<div class="eyebrow">Real Estate Agent Business Planning</div>
+<h1>Build a Business That Funds Your Life by Design.</h1>
+<blockquote class="purpose-quote">&ldquo;The purpose of business is to fund your truly perfect life.&rdquo;</blockquote>
+<p>This planning module builds a complete business plan that moves you from confusion to clarity about what your goals require and how to achieve them. Success is not easy, but it is usually simpler than most people make it. Start by calculating how much money it takes to fund your truly perfect life.</p>
+<div class="expectation">
+<h2>Here is what to expect</h2>
+<p>Each step turns a larger life or business goal into a number you can use. By the end, you will have an income target, a complete economic model, and a practical path from annual goals to the activity your calendar needs to contain.</p>
+</div>
+<ol class="journey">
+<li><b>1. Life by Design</b><span>Put a real number on the life you want—living costs, reserves, lifestyle, giving, future goals, and taxes.</span></li>
+<li><b>2. Economic Model</b><span>Translate that income target into GCI, expenses, volume, closings, agreements, contracts, and appointments.</span></li>
+<li><b>3. Lead Generation Model</b><span>Determine the lead-generation activity required to create the appointments in your Economic Model.</span></li>
+<li><b>4. GPS Business Plan</b><span>Turn the production goal into priorities and strategies you can execute.</span></li>
+<li><b>5. Time Blocking & 411</b><span>Put the activity into your calendar and turn annual goals into weekly commitments.</span></li>
+<li><b>6. Accountability</b><span>Track goals versus actual results, identify gaps early, and adjust before the year gets away from you.</span></li>
+</ol>
+<p class="journey-note">This release contains the complete Life by Design and Economic Model foundation. The next modules will build directly from the outputs created here.</p>
+</section>
+<nav class="progress" id="progress" aria-label="Plan sections"></nav>
+<div class="mobile-progress"><div class="mobile-step-top"><label for="stepPicker" id="stepLabel">AREA 1 OF 6</label><select id="stepPicker" aria-label="Jump to a plan section"></select></div><div class="progress-meter" aria-hidden="true"><span id="progressFill"></span></div></div>
+<div class="workspace"><section id="stage" aria-label="Current plan section"></section><aside class="summary-aside"><div class="summary"><div class="eyebrow">Your Life By Design Income Target</div><div class="total-number" id="annualTotal">$0</div><div class="monthly" id="monthlyTotal">$0 per month</div><hr><div id="summaryRows"></div><hr><p class="summary-note">This is the owner income target your business must fund. Step 2 adds Cost of Sales and Operating Expenses to calculate the GCI and production needed.</p></div><div class="privacy">Your entries stay in this browser. There is no account or cloud sync. Use Plan options to save or restore a backup.</div></aside></div>
+<div class="privacy-inline">Planning estimates only. Confirm tax assumptions with your tax professional.</div>
+</main>
+<div class="mobile-dock"><button class="dock-back" id="dockBack" aria-label="Previous section">&#8592;</button><div class="dock-total"><small>Life By Design Income Target</small><strong id="dockTotal">$0</strong></div><button class="btn primary dock-next" id="dockNext">Continue &#8594;</button></div>
+<input id="importFile" type="file" accept="application/json,.json" hidden>
+<div id="toast" class="toast" role="status" hidden></div>
+<noscript><p style="padding:24px">This calculator needs JavaScript. Open the hosted website in your browser, not a file preview.</p></noscript>
+<script src="./app.js?v=20260919b"></script>
 </body>
 </html>
-
