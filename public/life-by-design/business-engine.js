@@ -17,15 +17,15 @@ const finite=(v,min=0,max=1e10)=>typeof v==='number'&&Number.isFinite(v)&&v>=min
 const up=v=>v<=1e-10?0:Math.ceil(v-1e-9);
 function defaults(target=100000){
  const seed=(target>0?target:100000)/.665;
- return {version:1,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
+ return {version:2,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
  sellerCommission:10000,buyerCommission:10000,sellerShare:50,weeks:48,
  sellerSign:80,sellerClose:65,buyerSign:65,buyerClose:80,
  admin1:4000,admin2:4000,supportShare:100,buyerSplit:50,showingMode:'closing',showingFee:500,showingMonthly:3000,
- cosMode:'allowance',cosPercent:BASE.cos/BASE.gci*100,
- brokerPercent:BASE.cos/BASE.gci*100,brokerCapEnabled:false,brokerCap:21000,
- franchisePercent:0,franchiseCapEnabled:false,franchiseCap:3000,deskMonthly:0,
+ cosMode:'detail',cosPercent:BASE.cos/BASE.gci*100,
+ brokerPercent:30,brokerCapEnabled:true,brokerCap:18000,
+ franchisePercent:6,franchiseCapEnabled:true,franchiseCap:3000,deskMonthly:0,
  referralPercent:0,referralShare:0,leadPercent:10,
- fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:cost/BASE.gci*seed/12,custom:false})),
+ fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:Math.round(cost/BASE.gci*seed/12),custom:false})),
  variable:[{id:'tc',name:'Transaction coordinator',amount:0,basis:'closing',scope:'all'},
  {id:'photos',name:'Listing photos / preparation',amount:0,basis:'signed',scope:'seller'},
  {id:'gifts',name:'Closing gifts',amount:0,basis:'closing',scope:'all'}],saved:null};
@@ -46,8 +46,9 @@ function validate(s,target){
  return null;
 }
 function breakdown(s,gci){
- const sellerGci=gci*s.sellerShare/100,buyerGci=gci-sellerGci;
- const sellerClosed=sellerGci/s.sellerCommission,buyerClosed=buyerGci/s.buyerCommission;
+ const mix=s.sellerShare/100,average=mix*s.sellerCommission+(1-mix)*s.buyerCommission;
+ const units=gci/average,sellerClosed=units*mix,buyerClosed=units*(1-mix);
+ const sellerGci=sellerClosed*s.sellerCommission,buyerGci=buyerClosed*s.buyerCommission;
  const sellerSigned=sellerClosed/(s.sellerClose/100),buyerSigned=buyerClosed/(s.buyerClose/100);
  const sellerAppointments=sellerSigned/(s.sellerSign/100),buyerAppointments=buyerSigned/(s.buyerSign/100);
  const broker=s.cosMode==='detail'?Math.min(gci*s.brokerPercent/100,s.brokerCapEnabled?s.brokerCap:Infinity):0;
@@ -79,7 +80,7 @@ function solve(s,target){
  for(let i=0;i<90;i++){const mid=(low+high)/2;if(breakdown(s,mid).profit<target)low=mid;else high=mid;}
  const r=breakdown(s,high);r.target=target;
  r.sellerMonthly=up(r.sellerAppointments/12);r.buyerMonthly=up(r.buyerAppointments/12);r.monthly=r.sellerMonthly+r.buyerMonthly;
- r.sellerWeekly=up(r.sellerMonthly*12/s.weeks);r.buyerWeekly=up(r.buyerMonthly*12/s.weeks);r.weekly=r.sellerWeekly+r.buyerWeekly;
+ r.sellerWeekly=up(r.sellerAppointments/s.weeks);r.buyerWeekly=up(r.buyerAppointments/s.weeks);r.weekly=r.sellerWeekly+r.buyerWeekly;
  r.sellerSales=up(r.sellerClosed);r.buyerSales=up(r.buyerClosed);r.sales=r.sellerSales+r.buyerSales;
  return r;
 }
