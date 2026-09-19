@@ -70,7 +70,7 @@ const defs=[
  group('experiences','Travel & experiences','The things you want to start doing, or do more often.',[
  ['Travel & vacations','Flights, lodging, and trip spending. Example: a $6,000 vacation this year = $500/month.'],['Special experiences & events','Additional concerts, shows, or once-in-a-lifetime experiences beyond page 1 entertainment.'],['Hobbies & recreation','New hobbies, equipment, lessons, or recreation beyond your current budget.']]),
  group('upgrades','Lifestyle upgrades','More ease, enjoyment, or time for yourself.',[
- ['Wellness & personal growth','Additional retreats, training, coaching, or personal care not counted on page 1.'],['Home & lifestyle upgrades','Save monthly for a planned improvement or convenience, not routine maintenance.'],[__REMOVE_PLANNED_TIME_OFF__]])
+ ['Wellness & personal growth','Additional retreats, training, coaching, or personal care not counted on page 1.'],['Home & lifestyle upgrades','Save monthly for a planned improvement or convenience, not routine maintenance.']])
 ]},
 {id:'impact',nav:'Giving',title:'Give with intention.',desc:'Money is good for the good it can do. Decide who and what you want to support, then enter the amount using the monthly or yearly option that fits your plan.',groups:[
  group('faith','Tithing & faith giving','Your regular giving and additional faith commitments.',[
