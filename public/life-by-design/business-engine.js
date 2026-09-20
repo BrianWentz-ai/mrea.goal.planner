@@ -24,7 +24,7 @@ function defaults(target=100000){
  const seed=(target>0?target:100000)/.665;
  return {version:4,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
  sellerCommission:10000,buyerCommission:10000,sellerPrice:estimatedPrice(10000),buyerPrice:estimatedPrice(10000),sellerShare:50,weeks:47,
- sellerSign:80,sellerClose:65,buyerSign:65,buyerClose:80,sellerContractClose:100,buyerContractClose:100,
+ sellerSign:80,sellerClose:65,buyerSign:65,buyerClose:80,sellerContractClose:90,buyerContractClose:90,
  admin1:4000,admin2:4000,supportShare:100,buyerSplit:50,showingMode:'closing',showingFee:500,showingMonthly:3000,
  cosMode:'detail',cosPercent:BASE.cos/BASE.gci*100,brokerPercent:30,brokerCapEnabled:true,brokerCap:18000,
  franchisePercent:6,franchiseCapEnabled:true,franchiseCap:3000,deskMonthly:0,
@@ -41,7 +41,7 @@ function validate(s,target){
  if(![1,2,3,4].includes(s.level)||!['buyer','showing'].includes(s.support))return 'Choose a staffing level and support role.';
  for(const k of ['sellerCommission','buyerCommission'])if(!finite(s[k],1,1e7))return 'Commission per side must be greater than $0.';
  for(const k of ['sellerSign','sellerClose','buyerSign','buyerClose'])if(!finite(s[k],1,100))return 'Conversion rates must be between 1% and 100%.';
- for(const k of ['sellerContractClose','buyerContractClose'])if(!finite(s[k]??100,1,100))return 'Contract-to-closing rates must be between 1% and 100%.';
+ for(const k of ['sellerContractClose','buyerContractClose'])if(!finite(s[k]??90,1,100))return 'Contract-to-closing rates must be between 1% and 100%.';
  for(const k of ['sellerShare','supportShare','buyerSplit','cosPercent','brokerPercent','franchisePercent','referralPercent','referralShare','leadPercent'])if(!finite(s[k],0,100))return 'Percentages must be between 0% and 100%.';
  for(const side of ['seller','buyer'])for(const k of ['ReferralPercent','ReferralShare'])if(!finite(rate(s,side,k),0,100))return 'Referral percentages must be between 0% and 100%.';
  for(const k of ['admin1','admin2','showingFee','showingMonthly','brokerCap','franchiseCap','deskMonthly'])if(!finite(s[k]))return 'Costs must be valid, nonnegative amounts.';
@@ -59,7 +59,7 @@ function breakdown(s,gci,closed){
  const units=gci/average,sellerClosed=closed?closed.seller:units*mix,buyerClosed=closed?closed.buyer:units*(1-mix);
  const sellerGci=sellerClosed*s.sellerCommission,buyerGci=buyerClosed*s.buyerCommission;
  gci=sellerGci+buyerGci;
- const sellerContracts=sellerClosed/((s.sellerContractClose??100)/100),buyerContracts=buyerClosed/((s.buyerContractClose??100)/100);
+ const sellerContracts=sellerClosed/((s.sellerContractClose??90)/100),buyerContracts=buyerClosed/((s.buyerContractClose??90)/100);
  const sellerSigned=sellerContracts/(s.sellerClose/100),buyerSigned=buyerContracts/(s.buyerClose/100);
  const sellerAppointments=sellerSigned/(s.sellerSign/100),buyerAppointments=buyerSigned/(s.buyerSign/100);
  const broker=s.cosMode==='detail'?budget(s,'broker',Math.min(gci*s.brokerPercent/100,s.brokerCapEnabled?s.brokerCap:Infinity)):0;

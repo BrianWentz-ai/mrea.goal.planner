@@ -62,8 +62,8 @@ function control(key,label,help,min,max,step=1,unit='%',value=s[key],slider=true
  return '<div class="control"><div class="control-top"><label for="n-'+key+'">'+esc(label)+(help?'<small>'+esc(help)+'</small>':'')+'</label><div class="value-field">'+(unit==='$'?'<span aria-hidden="true">$</span>':'')+'<input id="n-'+key+'" type="number" inputmode="decimal" min="'+min+'" max="'+(unit==='$'?100000000:unit==='weeks'?52:100)+'" step="any" data-key="'+key+'" value="'+current+'" aria-label="'+esc(label)+'">'+(unit==='$'?'':'<span>'+esc(unit)+'</span>')+'</div></div>'+(slider?'<input type="range" aria-label="'+esc(label)+' slider" min="'+min+'" max="'+top+'" step="'+step+'" value="'+current+'" data-key="'+key+'"><div class="range-ends"><span>'+(unit==='$'?money(min):min+(unit==='%'?'%':''))+'</span><span>'+(unit==='$'?money(top):top+(unit==='%'?'%':''))+'</span></div>':'')+'</div>';
 }
 function accordion(id,name,body,help=''){return '<details class="accordion" data-open="'+id+'" '+(open.has(id)?'open':'')+'><summary><span>'+name+(help?'<small>'+help+'</small>':'')+'</span></summary>'+body+'</details>';}
-function footer(){return '<div class="actions">'+(s.page?'<button class="btn" data-action="back">Back</button>':'<a class="btn" href="./">Life plan</a>')+'<button class="primary" data-action="next">'+(s.page===2?'Save My Economic Model':s.page===1?'See My Full Economic Model':'Continue →')+'</button></div>';}
-function reviewLinks(){return '<nav class="review-links" aria-label="Review or edit your inputs"><strong>Review or edit any input</strong><a href="./">Life income target</a><button data-page="0">Business assumptions</button><button data-page="1">Cost of Sales & Fixed Operating Expenses</button></nav>';}
+function footer(){return '<div class="actions">'+(s.page?'<button class="btn" data-action="back">Back</button>':'<a class="btn" href="./">Life plan</a>')+'<button class="primary" data-action="next">'+(s.page===2?'Save & Continue to My GPS':s.page===1?'See My Full Economic Model':'Continue →')+'</button></div>';}
+function reviewLinks(){return '<nav class="review-links" aria-label="Review or edit your inputs"><strong>Review or edit any input</strong><a href="./">Life income target</a><button data-page="0">Business assumptions</button><button data-page="1">Your Business Investment Costs</button></nav>';}
 function goalBox(){const g=goal();return '<div class="goal-box"><div class="goal-top"><div><small>ANNUAL OWNER INCOME GOAL</small><strong>'+(g?money(g):'Set your goal')+'</strong></div><button class="text-btn" data-action="goal-edit">'+(open.has('goal')?'Close':'Change / review')+'</button></div><p>'+(s.goalMode==='manual'?'Your entered goal. Include your personal tax reserve in this amount.':life.value?'From your saved Life by Design plan, including personal taxes. We do not add them again.':esc(life.error))+'</p>'+(open.has('goal')?'<div class="goal-edit"><label class="mini-label" for="goalMode">Income target source</label><select class="select" id="goalMode"><option value="life" '+(s.goalMode==='life'?'selected':'')+'>Saved Life by Design target</option><option value="manual" '+(s.goalMode==='manual'?'selected':'')+'>Enter an annual goal</option></select>'+(s.goalMode==='manual'?control('manualGoal','Annual personal income','After business expenses, before personal taxes.',1000,500000,1000,'$',s.manualGoal,false):'<p><a href="./">Return to your life plan</a> to update and save your income target.</p>')+'</div>':'')+'</div>';}
 function setup(){
  return '<div class="card">'+title('STEP 2 / ECONOMIC MODEL','Build the business that funds it.','You now know how much income you need to fund everything important to you. This step builds the economic model behind that goal—connecting annual income to GCI, volume, closings, agreements, appointments, and the weekly activity your calendar must support.')+
@@ -82,7 +82,7 @@ function activityInputs(){
 function scorecardGoals(p){return {appointments:p.monthly,agreements:p.sellerAgreementsMonthly+p.buyerAgreementsMonthly,closings:E.up(p.sellerSales/12)+E.up(p.buyerSales/12),gci:p.gci/12};}
 function fourConversations(p){
  const g=scorecardGoals(p),labels=[['appointments','Appointments needed / month','Seller + buyer consultations'],['agreements','Listings Taken & Buyer Commitments','Signed client agreements / month'],['closings','Closed Units','Seller + buyer closings / month'],['gci','GCI','Gross commission income / month']];
- return '<div class="four-scorecard" aria-label="Monthly Four Conversations goals">'+labels.map(([key,label,hint],i)=>(i===2?'<div class="value-wall"><span>WALL OF VALUE</span></div>':'')+'<section class="scorecard-metric"><h4>'+label+'</h4><p>'+hint+'</p><div class="scorecard-goal"><small>MONTHLY GOAL</small><strong>'+(key==='gci'?money(g[key]):g[key])+'</strong></div></section>').join('')+'</div><p class="scorecard-note">Monthly activity goals round each side up to a whole unit. GCI is the annual plan divided by 12. These are planning goals; actual-results tracking comes in the next step.</p>';
+ return '<div class="four-scorecard" aria-label="Monthly Four Conversations goals">'+labels.map(([key,label,hint],i)=>(i===2?'<div class="value-wall"><span>WALL OF VALUE</span></div>':'')+'<section class="scorecard-metric"><h4>'+label+'</h4><p>'+hint+'</p><div class="scorecard-goal"><small>MONTHLY GOAL</small><strong>'+(key==='gci'?money(g[key]):g[key])+'</strong></div></section>').join('')+'</div><p class="scorecard-note">Monthly activity goals round each side up to a whole unit. GCI is the annual plan divided by 12. These are planning goals; actual-results tracking comes in a later module.</p>';
 }
 
 function monthlyFixed(){return s.fixed.reduce((a,x)=>a+x.monthly,0);}
@@ -117,7 +117,7 @@ function modelSummaryBox(r){
  return '<section class="econ-summary">'+[['Annual GCI',money(p.gci)],['Annual business expenses',money(p.cos+p.opex)],['Closings needed / year',p.sales],['Appointments needed / month',p.monthly],['Appointments needed / week',p.weekly]].map(([label,value])=>'<div><small>'+label+'</small><strong>'+value+'</strong></div>').join('')+'</section>';
 }
 function costPage(){
- return '<div class="card">'+title('STEP 2 / ECONOMIC MODEL','Build the Economics Behind Your Income Goal','Now define what it costs to produce the business. Cost of Sales and Fixed Operating Expenses are separated so the model stays congruent with a true real estate P&L.')+
+ return '<div class="card">'+title('STEP 2 / ECONOMIC MODEL','Your Business Investment Costs','Now define what it costs to produce the business. Cost of Sales and Fixed Operating Expenses are separated so the model stays congruent with a true real estate P&L.')+
  '<div class="body"><div id="error" class="error"></div>'+
  '<h3>Cost of Sales</h3><p class="help">Costs caused directly by producing or closing business. These rise or fall with production and are deducted before operating expenses.</p>'+
  accordion('brokerage','Brokerage Agreement & Fees',brokerMarkup(),'Company dollar, royalty/franchise fees, caps and broker fixed fees.')+
@@ -139,7 +139,7 @@ function appointmentPage(){
  '<section id="modelResults" class="model-results"><div class="results-heading"><div class="eyebrow">YOUR RESULTS</div><h3>Your Economic Model for Your Business Goal</h3><p>Your income goal becomes a revenue target, then a plan for Seller Business and Buyer Business.</p></div><div id="economicOutputs"></div><div id="pipeline"></div>'+accordion('calculation-details','Show the calculation details','<div id="calculationDetails"></div>')+
  '<div id="outcomeSummary"></div><section class="action-plan"><h3>Your Action Plan</h3><div id="bottomSummary"></div><p class="calendar-reminder"><strong>Your calendar should reflect your goals.</strong> Reserve time each working week for the appointments and follow-up your plan needs.</p></section>'+
  '<section class="scorecard-section"><div class="eyebrow">THE FOUR CONVERSATIONS</div><h3>Your Monthly Business Goals</h3><p class="help">Keep these four numbers in view. Appointments and signed commitments lead to closings and gross commission income.</p><div id="fourConversations"></div></section></section>'+
- '<div id="savedNote" class="save-note"></div>'+reviewLinks()+'<section class="next-stage" id="nextStage" hidden><h3>Your Economic Model Is Saved</h3><p>Your income, production, Four Conversations goals and appointment targets are ready for the next business-planning module.</p><button class="btn" data-action="backup">Download My Plan Backup</button></section></div>'+footer()+'</div>';
+ '<div id="savedNote" class="save-note"></div>'+reviewLinks()+'<section class="next-stage" id="nextStage" hidden><h3>Your Economic Model Is Saved</h3><p>Your income, production, Four Conversations goals and appointment targets are ready for your GPS Business Plan.</p><a class="primary" href="gps.html">Continue to My GPS</a> <a class="primary" href="gps.html">Continue to My GPS</a> <button class="btn" data-action="backup">Download My Plan Backup</button></section></div>'+footer()+'</div>';
 }
 function go(page){s.page=Math.max(0,Math.min(2,page));persist();render();window.scrollTo({top:0,behavior:'auto'});}
 function saveModel(){
@@ -147,7 +147,7 @@ function saveModel(){
  s.saved={fingerprint:fingerprint(),savedAt:new Date().toISOString(),source:s.goalMode,annualIncomeGoal:goal(),annualAfterTaxGoal:s.goalMode==='life'?life.afterTax||null:null,annualGci:p.gci,annualCostOfSales:p.cos,annualOperatingExpenses:p.opex,profitMargin:p.margin,annualClosings:p.sales,annualVolume:p.volume,sellerAgreements:p.sellerSigned,buyerAgreements:p.buyerSigned,sellerContracts:p.sellerContracts,buyerContracts:p.buyerContracts,totalAppointmentsPerMonth:p.monthly,totalAppointmentsPerWeek:p.weekly,workingWeeks:s.weeks,monthlyFourConversations:scorecardGoals(p),estimatedSellerPrice:p.sellerPrice,estimatedBuyerPrice:p.buyerPrice};
  persist();numbers();toast(storageOK?'Your Economic Model is saved.':'Saving failed. Enable browser storage or download a backup.');return storageOK;
 }
-function next(){if(s.page===0&&!(goal()>0)){open.add('goal');render();toast('Use a saved Life by Design target or enter an annual goal.');return;}const r=E.solve(s,goal());if(r.error){toast(r.error);return;}if(s.page===0)go(1);else if(s.page===1)go(2);else if(saveModel())$('nextStage')?.scrollIntoView({block:'center',behavior:'smooth'});}
+function next(){if(s.page===0&&!(goal()>0)){open.add('goal');render();toast('Use a saved Life by Design target or enter an annual goal.');return;}const r=E.solve(s,goal());if(r.error){toast(r.error);return;}if(s.page===0)go(1);else if(s.page===1)go(2);else if(saveModel())window.location.href='gps.html';}
 function sync(key,value,el){document.querySelectorAll('[data-key="'+key+'"]').forEach(x=>{if(x===el)return;if(x.type==='range'&&Number.isFinite(value)&&value>Number(x.max))x.max=value;x.value=Number.isFinite(value)?(x.type==='range'?value:Math.round(value*100)/100):'';});}
 function numbers(){
  const r=E.solve(s,goal()),p=r.plan||r;
@@ -185,7 +185,7 @@ function render(){
  document.querySelectorAll('details[data-open]').forEach(el=>{if(el.open)open.add(el.dataset.open);else open.delete(el.dataset.open);});
  document.body.classList.toggle('after-setup',s.page!==0);const y=window.scrollY;$('stage').innerHTML=s.page===0?setup():s.page===1?costPage():appointmentPage();
  document.querySelectorAll('[data-page]').forEach(b=>{b.classList.toggle('active',Number(b.dataset.page)===s.page);b.setAttribute('aria-current',Number(b.dataset.page)===s.page?'step':'false');});
- $('dockNext').textContent=s.page===2?'Save Model':s.page===1?'See Full Model':'Continue';numbers();window.scrollTo(0,y);
+ $('dockNext').textContent=s.page===2?'Save & Continue':s.page===1?'See Full Model':'Continue';numbers();window.scrollTo(0,y);
 }
 $('stage').addEventListener('input',e=>{
  const el=e.target;
@@ -222,7 +222,7 @@ document.addEventListener('click',e=>{
   case'backup':$('export').click();break;case'next':next();break;case'back':go(s.page-1);break;case'setup':go(0);break;
   case'goal-edit':open.has('goal')?open.delete('goal'):open.add('goal');render();break;
   case'add-fixed':s.fixed.push({id:'f-'+uid(),name:'',hint:'A recurring business cost.',monthly:0,custom:true});open.add('fixed');persist();render();document.querySelector('[data-name="'+s.fixed.at(-1).id+'"]')?.focus();break;
-  case'reset-conversions':s.sellerSign=80;s.sellerClose=65;s.buyerSign=65;s.buyerClose=80;s.sellerContractClose=100;s.buyerContractClose=100;persist();render();break;
+  case'reset-conversions':s.sellerSign=80;s.sellerClose=65;s.buyerSign=65;s.buyerClose=80;s.sellerContractClose=90;s.buyerContractClose=90;persist();render();break;
  }
 });
 $('dockNext').addEventListener('click',next);
