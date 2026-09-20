@@ -4,7 +4,6 @@ const E=window.LBDBusiness,$=id=>document.getElementById(id),KEY='lifeByDesign:b
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(v||0);
 const dec=v=>Number(v||0).toLocaleString('en-US',{maximumFractionDigits:1});
-const pct=(actual,goal)=>goal>0?Math.round(actual/goal*100):0;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 let life={error:'Save your Life by Design target first.'},storageOK=true,rawLife=null,s,open=new Set(['brokerage','referrals','transaction-seller','transaction-buyer','fixed','staff','conversions','four-conversations']),toastTimer;
 function readLife(){try{rawLife=JSON.parse(localStorage.getItem(LIFE)||'null');life=E.lifeTarget(rawLife);}catch{life={error:'This browser cannot read your saved life plan. You can enter an annual target below.'};}}
@@ -23,7 +22,7 @@ function migrateVariables(list){
 }
 function restore(raw){
  const d=E.defaults(life.value||100000);
- if(!raw||![1,2,3].includes(raw.version))return d;
+ if(!raw||![1,2,3,4].includes(raw.version))return d;
  const originalVersion=raw.version,v={...d,...raw,budgets:{...d.budgets,...(raw.budgets||{})},actuals:{...(raw.actuals||{})}};
  if(originalVersion===1){
   const sellerUnits=v.sellerShare/v.sellerCommission,buyerUnits=(100-v.sellerShare)/v.buyerCommission;
@@ -47,7 +46,9 @@ function restore(raw){
  if(!Array.isArray(v.variable)||v.variable.length>1000)v.variable=d.variable;
  v.variable=v.variable.filter(x=>x&&typeof x==='object'&&['seller','buyer'].includes(x.scope)).map(x=>({...x,id:/^[a-zA-Z0-9_-]{1,100}$/.test(x.id)?x.id:uid(),name:String(x.name??'Custom expense').slice(0,150)}));
  for(const side of ['seller','buyer'])if(!v.variable.some(x=>x.scope===side))v.variable.push(...d.variable.filter(x=>x.scope===side));
- v.cosMode='detail';v.version=3;
+ v.cosMode='detail';v.version=4;
+ v.sellerPrice=E.estimatedPrice(v.sellerCommission);v.buyerPrice=E.estimatedPrice(v.buyerCommission);
+ if(originalVersion<4)v.saved=null;
  return E.validate(v,1)?d:v;
 }
 try{s=restore(JSON.parse(localStorage.getItem(KEY)||'null'));}catch{s=E.defaults(life.value||100000);storageOK=false;}
@@ -69,14 +70,21 @@ function setup(){
  '<div class="body">'+goalBox()+'<p class="callout"><strong>Outcome:</strong> by the end of Step 2 you will know what your income goal requires from your real estate business and the monthly and weekly numbers you can track.</p>'+
  '<label class="mini-label">How will your business be staffed?</label><div class="levels">'+[[1,'Just me','You handle sales and administration.'],[2,'Me + one admin','You handle sales; one admin supports paperwork, coordination, and follow-up.'],[3,'Me + two admins','You handle sales with two admins supporting transactions and operations.'],[4,'Me + buyer support','Two admins plus a buyer agent or showing specialist.']].map(([v,name,h])=>'<button class="level '+(s.level===v?'active':'')+'" data-level="'+v+'" aria-pressed="'+(s.level===v)+'"><small>LEVEL '+v+'</small><strong>'+name+'</strong><span>'+h+'</span></button>').join('')+'</div>'+
  (s.level===4?'<label class="mini-label" for="support">Your level 4 support</label><select class="select" id="support"><option value="buyer" '+(s.support==='buyer'?'selected':'')+'>Buyer agent</option><option value="showing" '+(s.support==='showing'?'selected':'')+'>Showing specialist</option></select>':'')+
- '<h3>Production assumptions</h3><p class="help">Use your actual averages when you have them. These assumptions convert your GCI target into units and optional closed volume.</p>'+
- control('sellerCommission','Average GCI per Closed Listing','Gross commission income your business earns for one closed listing side, before broker splits and expenses.',500,30000,250,'$')+
- control('buyerCommission','Average GCI per Closed Buyer','Gross commission income your business earns for one closed buyer side, before broker splits and expenses.',500,30000,250,'$')+
- control('sellerPrice','Average Closed Listing Price','Used only to calculate closed volume. Enter 0 if you do not want a volume calculation.',0,3000000,10000,'$')+
- control('buyerPrice','Average Closed Buyer Price','Used only to calculate closed volume. Enter 0 if you do not want a volume calculation.',0,3000000,10000,'$')+
- control('sellerShare','Percent of Closings from Listings','What percentage of your closed transaction sides will be listings? Buyers make up the rest.',0,100,1,'%')+
- '<div class="mix-bar" aria-hidden="true"><span id="sellerBar"></span><span></span></div><p class="mix-label" id="mixLabel"></p><div id="error" class="error"></div></div>'+footer()+'</div>';
+ productionInputs()+'<div id="error" class="error"></div></div>'+footer()+'</div>';
 }
+
+function productionInputs(){
+ return '<section class="production-inputs" aria-label="Production assumptions"><h3>Production Assumptions</h3><p class="help">Use the gross commission dollars your business earns per closed side, before splits and expenses. Estimated sales prices update with these amounts to provide reference volume.</p><div class="input-columns">'+['seller','buyer'].map(side=>'<section><h4>'+(side==='seller'?'Seller Business':'Buyer Business')+'</h4>'+control(side+'Commission',side==='seller'?'Average GCI per Closed Listing':'Average GCI per Closed Buyer','Gross commission dollars for your represented side of one closing.',500,30000,250,'$')+'<div class="estimated-price"><span>Estimated Sales Price '+(side==='seller'?'Seller':'Buyer')+'</span><strong id="'+side+'PriceEstimate">'+money(E.estimatedPrice(s[side+'Commission']))+'</strong><small>Automatic planning estimate for reference volume.</small></div></section>').join('')+'</div>'+control('sellerShare','Percent of Listings to Buyers','Share of closed transaction sides that will be listings. Buyers make up the rest. Adjust in 1% increments.',0,100,1,'%')+'<div class="mix-bar" aria-hidden="true"><span id="sellerBar"></span><span></span></div><p class="mix-label" id="mixLabel"></p></section>';
+}
+function activityInputs(){
+ return '<section class="activity-inputs" aria-label="Activity assumptions"><h3>Make Room for Life</h3><p>Start with 52 weeks, then allow for vacation, family needs, illness, travel, and education. The starting plan allows five weeks away from regular production: <strong>47 working weeks</strong>. Count overlapping time away only once.</p>'+control('weeks','Working Weeks per Year','Fewer working weeks increases the appointments needed each week for the same annual goal.',1,52,.5,'weeks')+'<h3>Personalize Your Conversion Rates</h3><p class="help">These are editable planning examples. Your experience, skills, follow-up, and actual results matter. Use conservative projections when you are new and update them as your track record grows.</p><div class="input-columns">'+['seller','buyer'].map(side=>'<section><h4>'+(side==='seller'?'Seller Business':'Buyer Business')+'</h4>'+control(side+'Sign',side==='seller'?'Seller Appointments → Signed Listing Agreements':'Buyer Appointments → Signed Buyer Agreements','Of consultations held, how many become signed client agreements?',1,100,1,'%')+control(side+'Close',side==='seller'?'Signed Listing Agreements → Contracts':'Signed Buyer Agreements → Contracts','Of signed client agreements, how many reach a written or pending purchase contract?',1,100,1,'%')+control(side+'ContractClose',side==='seller'?'Seller Contracts → Closed Listings':'Buyer Contracts → Closed Buyers','Of written or pending contracts, how many close? 100% assumes no contract fallout.',1,100,1,'%')+'</section>').join('')+'</div><button class="text-btn" data-action="reset-conversions">Reset to planning examples</button><p class="help">Appointments needed means buyer or seller consultations actually held. These are not showings, contact attempts, or appointments that cancel.</p></section>';
+}
+function scorecardGoals(p){return {appointments:p.monthly,agreements:p.sellerAgreementsMonthly+p.buyerAgreementsMonthly,closings:E.up(p.sellerSales/12)+E.up(p.buyerSales/12),gci:p.gci/12};}
+function fourConversations(p){
+ const g=scorecardGoals(p),labels=[['appointments','Appointments needed / month','Seller + buyer consultations'],['agreements','Listings Taken & Buyer Commitments','Signed client agreements / month'],['closings','Closed Units','Seller + buyer closings / month'],['gci','GCI','Gross commission income / month']];
+ return '<div class="four-scorecard" aria-label="Monthly Four Conversations goals">'+labels.map(([key,label,hint],i)=>(i===2?'<div class="value-wall"><span>WALL OF VALUE</span></div>':'')+'<section class="scorecard-metric"><h4>'+label+'</h4><p>'+hint+'</p><div class="scorecard-goal"><small>MONTHLY GOAL</small><strong>'+(key==='gci'?money(g[key]):g[key])+'</strong></div></section>').join('')+'</div><p class="scorecard-note">Monthly activity goals round each side up to a whole unit. GCI is the annual plan divided by 12. These are planning goals; actual-results tracking comes in the next step.</p>';
+}
+
 function monthlyFixed(){return s.fixed.reduce((a,x)=>a+x.monthly,0);}
 function fixedRows(){return '<div class="expense-columns"><span>Category</span><span>Monthly</span><span>Yearly</span></div>'+s.fixed.map(x=>{
  const annual=x.monthly*12;
@@ -105,8 +113,8 @@ function staffMarkup(){
 }
 function modelSummaryBox(r){
  if(r.error)return '<div class="callout">'+esc(r.error)+'</div>';
- const p=r.plan||r,expenses=p.cos+p.opex;
- return '<section class="econ-summary"><div><small>GCI</small><strong>'+money(p.gci)+'</strong></div><div><small>Expenses</small><strong>'+money(expenses)+'</strong></div><div><small>Closings</small><strong>'+p.sales+'</strong></div><div><small>Appointments / month</small><strong>'+p.monthly+'</strong></div><div><small>Appointments / week</small><strong>'+p.weekly+'</strong></div><p>Your calendar should reflect your goals. If the appointments are not on the calendar, the economic model is only a wish.</p></section>';
+ const p=r.plan||r;
+ return '<section class="econ-summary">'+[['Annual GCI',money(p.gci)],['Annual business expenses',money(p.cos+p.opex)],['Closings needed / year',p.sales],['Appointments needed / month',p.monthly],['Appointments needed / week',p.weekly]].map(([label,value])=>'<div><small>'+label+'</small><strong>'+value+'</strong></div>').join('')+'</section>';
 }
 function costPage(){
  return '<div class="card">'+title('STEP 2 / ECONOMIC MODEL','Build the Economics Behind Your Income Goal','Now define what it costs to produce the business. Cost of Sales and Fixed Operating Expenses are separated so the model stays congruent with a true real estate P&L.')+
@@ -125,56 +133,50 @@ function costPage(){
  '<section class="save-target"><h3>Your Economic Model at a Glance</h3><p>These are the basics your current assumptions produce before you open the full Economic Model.</p><div id="costSummary"></div></section>'+
  '</div>'+footer()+'</div>';
 }
-function conversationRow(key,label,goalValue,unit='number'){
- const actual=Number(s.actuals?.[key]||0),g=Number(goalValue||0),display=unit==='money'?money(g):Math.ceil(g);
- return '<div class="conversation-row"><div><strong>'+label+'</strong></div><div><span class="mobile-field-label">Goal</span><strong>'+display+'</strong></div><label><span class="mobile-field-label">Actual</span><input type="number" min="0" step="any" data-actual="'+key+'" value="'+(actual||'')+'" placeholder="0" aria-label="'+label+' actual"></label><div><span class="mobile-field-label">% to goal</span><strong>'+(actual&&g?pct(actual,g)+'%':'—')+'</strong></div></div>';
-}
 function appointmentPage(){
- return '<div class="card">'+title('STEP 2 / YOUR ECONOMIC MODEL','Your Income Goal, Translated into a Business Plan','This is where the big income goal becomes an operating plan. Review the full model first, then adjust conversion rates or working weeks to make the plan realistic for how you work.')+
- '<div class="body"><div id="error" class="error"></div><div id="outcomeSummary"></div><div id="economicOutputs"></div><h3>Your Complete Buyer and Listing Model</h3><p class="help">Follow each side from GCI to closings, agreements, contracts and appointments. Closed volume appears when you enter average sale prices.</p><div id="pipeline"></div>'+
- '<h3>The Four Conversations Accountability Tracker</h3><p class="help">The model calculates the Goal column. Enter your own Actual results as you track the business; % to Goal updates automatically. Customer Service Value Proposition remains part of the framework but is intentionally not built here.</p><div class="conversation-head"><span>Conversation</span><span>Goal</span><span>Actual</span><span>% to Goal</span></div><div id="fourConversations"></div>'+
- '<h3>Adjust the Activity Assumptions</h3><p>Your model automatically starts with <strong>47 working weeks</strong>—five weeks away from regular production. It is Life by Design, after all. Adjust this and your conversion rates below if your real business operates differently.</p>'+
- control('weeks','Working Weeks per Year','Fewer working weeks raises the weekly activity target while keeping the annual goal intact.',1,52,.5,'weeks')+
- accordion('conversions','Buyer & Seller Conversion Rates','<p class="help">Use actual conversion rates when you know them. Lower rates require more appointments for the same income goal.</p>'+
- control('sellerSign','Seller Appointments → Signed Listing Agreements','Of seller consultations held, how many become signed listings?',1,100,1,'%')+
- control('sellerClose','Signed Listing Agreements → Closed Listings','Of signed listing agreements, how many ultimately close?',1,100,1,'%')+
- control('sellerContractClose','Seller Contracts → Closed Listings','Of contracts written/pended on your listings, how many close? 100% assumes no contract fallout.',1,100,1,'%')+
- control('buyerSign','Buyer Appointments → Signed Buyer Broker Agreements','Of buyer consultations held, how many become signed buyer clients?',1,100,1,'%')+
- control('buyerClose','Signed Buyer Broker Agreements → Closed Buyers','Of signed buyer agreements, how many ultimately close?',1,100,1,'%')+
- control('buyerContractClose','Buyer Contracts → Closed Buyers','Of buyer contracts written/pended, how many close? 100% assumes no contract fallout.',1,100,1,'%')+
- '<button class="text-btn" data-action="reset-conversions">Reset to planning examples</button>')+
- '<h3>Economic Model Summary</h3><div id="bottomSummary"></div><div id="savedNote" class="save-note"></div>'+reviewLinks()+
- '<section class="next-stage" id="nextStage" hidden><h3>Your Economic Model Is Saved</h3><p>Your income, production, Four Conversations goals and appointment targets are ready to feed the next business-planning module.</p><button class="btn" data-action="backup">Download My Plan Backup</button></section></div>'+footer()+'</div>';
+ return '<div class="card">'+title('STEP 2 / YOUR ECONOMIC MODEL','Turn Your Business Goal into an Action Plan','Adjust your production and activity assumptions first. Your Economic Model and Four Conversations goals update below as you work.')+
+ '<div class="body"><div id="error" class="error" role="alert"></div><section id="modelInputs">'+goalBox()+productionInputs()+activityInputs()+'</section>'+
+ '<section id="modelResults" class="model-results"><div class="results-heading"><div class="eyebrow">YOUR RESULTS</div><h3>Your Economic Model for Your Business Goal</h3><p>Your income goal becomes a revenue target, then a plan for Seller Business and Buyer Business.</p></div><div id="economicOutputs"></div><div id="pipeline"></div>'+accordion('calculation-details','Show the calculation details','<div id="calculationDetails"></div>')+
+ '<div id="outcomeSummary"></div><section class="action-plan"><h3>Your Action Plan</h3><div id="bottomSummary"></div><p class="calendar-reminder"><strong>Your calendar should reflect your goals.</strong> Reserve time each working week for the appointments and follow-up your plan needs.</p></section>'+
+ '<section class="scorecard-section"><div class="eyebrow">THE FOUR CONVERSATIONS</div><h3>Your Monthly Business Goals</h3><p class="help">Keep these four numbers in view. Appointments and signed commitments lead to closings and gross commission income.</p><div id="fourConversations"></div></section></section>'+
+ '<div id="savedNote" class="save-note"></div>'+reviewLinks()+'<section class="next-stage" id="nextStage" hidden><h3>Your Economic Model Is Saved</h3><p>Your income, production, Four Conversations goals and appointment targets are ready for the next business-planning module.</p><button class="btn" data-action="backup">Download My Plan Backup</button></section></div>'+footer()+'</div>';
 }
 function go(page){s.page=Math.max(0,Math.min(2,page));persist();render();window.scrollTo({top:0,behavior:'auto'});}
 function saveModel(){
  const r=E.solve(s,goal()),p=r.plan||r;if(r.error){toast(r.error);return;}
- s.saved={fingerprint:fingerprint(),savedAt:new Date().toISOString(),source:s.goalMode,annualIncomeGoal:goal(),annualAfterTaxGoal:life.afterTax||null,annualGci:p.gci,annualCostOfSales:p.cos,annualOperatingExpenses:p.opex,profitMargin:p.margin,annualClosings:p.sales,annualVolume:p.volume,sellerAgreements:p.sellerSigned,buyerAgreements:p.buyerSigned,sellerContracts:p.sellerContracts,buyerContracts:p.buyerContracts,totalAppointmentsPerMonth:p.monthly,totalAppointmentsPerWeek:p.weekly,workingWeeks:s.weeks};
+ s.saved={fingerprint:fingerprint(),savedAt:new Date().toISOString(),source:s.goalMode,annualIncomeGoal:goal(),annualAfterTaxGoal:s.goalMode==='life'?life.afterTax||null:null,annualGci:p.gci,annualCostOfSales:p.cos,annualOperatingExpenses:p.opex,profitMargin:p.margin,annualClosings:p.sales,annualVolume:p.volume,sellerAgreements:p.sellerSigned,buyerAgreements:p.buyerSigned,sellerContracts:p.sellerContracts,buyerContracts:p.buyerContracts,totalAppointmentsPerMonth:p.monthly,totalAppointmentsPerWeek:p.weekly,workingWeeks:s.weeks,monthlyFourConversations:scorecardGoals(p),estimatedSellerPrice:p.sellerPrice,estimatedBuyerPrice:p.buyerPrice};
  persist();numbers();toast(storageOK?'Your Economic Model is saved.':'Saving failed. Enable browser storage or download a backup.');return storageOK;
 }
 function next(){if(s.page===0&&!(goal()>0)){open.add('goal');render();toast('Use a saved Life by Design target or enter an annual goal.');return;}const r=E.solve(s,goal());if(r.error){toast(r.error);return;}if(s.page===0)go(1);else if(s.page===1)go(2);else if(saveModel())$('nextStage')?.scrollIntoView({block:'center',behavior:'smooth'});}
 function sync(key,value,el){document.querySelectorAll('[data-key="'+key+'"]').forEach(x=>{if(x===el)return;if(x.type==='range'&&Number.isFinite(value)&&value>Number(x.max))x.max=value;x.value=Number.isFinite(value)?(x.type==='range'?value:Math.round(value*100)/100):'';});}
 function numbers(){
  const r=E.solve(s,goal()),p=r.plan||r;
- if($('error'))$('error').textContent=r.error&&!r.missingGoal?r.error:'';
- if($('mixLabel'))$('mixLabel').textContent=dec(s.sellerShare)+'% Listings / '+dec(100-s.sellerShare)+'% Buyers';
- if($('sellerBar'))$('sellerBar').style.width=Math.max(0,Math.min(100,s.sellerShare))+'%';
+ if($('error'))$('error').textContent=r.error||'';
+ for(const side of ['seller','buyer'])if($(side+'PriceEstimate'))$(side+'PriceEstimate').textContent=Number.isFinite(s[side+'Commission'])?money(E.estimatedPrice(s[side+'Commission'])):'Check commission';
+ if($('mixLabel'))$('mixLabel').textContent=Number.isFinite(s.sellerShare)?dec(s.sellerShare)+'% Listings / '+dec(100-s.sellerShare)+'% Buyers':'Enter a listing share';
+ if($('sellerBar'))$('sellerBar').style.width=Math.max(0,Math.min(100,s.sellerShare||0))+'%';
  if($('splitLabel'))$('splitLabel').textContent='You keep '+dec(100-s.brokerPercent)+'% | Broker receives '+dec(s.brokerPercent)+'%';
- if(r.error){$('dockTarget').textContent=r.missingGoal?'Set your income goal':'Check your inputs';if($('costSummary'))$('costSummary').innerHTML=modelSummaryBox(r);return;}
- $('dockTarget').textContent='GCI '+money(p.gci);
- $('aside').innerHTML=s.page===0?'':modelSummaryBox(p);
- if($('costSummary'))$('costSummary').innerHTML=modelSummaryBox(p);
+ const goalDisplay=document.querySelector('.goal-top strong');if(goalDisplay)goalDisplay.textContent=goal()?money(goal()):'Set your goal';
+ $('aside').innerHTML='';
+ $('dockTarget').textContent=['Business assumptions','Business investment costs','Review and save'][s.page];
+ if($('modelResults'))$('modelResults').hidden=!!r.error;
+ if($('costSummary'))$('costSummary').innerHTML=modelSummaryBox(r);
+ if(r.error){if($('nextStage'))$('nextStage').hidden=true;if($('savedNote'))$('savedNote').textContent='Correct the inputs above to calculate and save your model.';return;}
+ if($('economicOutputs')){
+  const rows=[['Owner income goal, including tax reserve',goal()],['+ Cost of Sales',p.cos],['+ Fixed & operating expenses',p.opex]];
+  if(p.roundingCushion>.005)rows.push(['+ Income above goal from whole closings',p.roundingCushion]);
+  rows.push(['= Planned annual GCI',p.gci]);
+  $('economicOutputs').innerHTML=rows.map(([label,value],i)=>'<div class="money-line '+(i===rows.length-1?'total':'')+'"><span>'+label+'</span><strong>'+money(value)+'</strong></div>').join('')+'<p class="help">Whole-closing commitments may produce income above your goal. Estimated owner profit margin: <strong>'+dec(p.margin)+'%</strong>.</p>';
+ }
+ if($('pipeline'))$('pipeline').innerHTML='<div class="pipeline">'+['seller','buyer'].map(side=>'<section><h3>'+(side==='seller'?'Seller Business':'Buyer Business')+'</h3>'+[
+ ['Annual GCI',money(p[side+'Gci'])],['Closed units needed / year',p[side+'Sales']],['Signed agreements needed / year',E.up(p[side+'Signed'])],['Appointments needed / year',E.up(p[side+'Appointments'])],['Appointments needed / month',p[side+'Monthly']],['Appointments needed / week',p[side+'Weekly']]].map(([label,value],i)=>'<div class="pipe-row '+(i>0?'key-outcome':'')+'"><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'<div class="conversion-note"><strong>Your conversion assumptions</strong><span>Appointments → agreements: '+dec(s[side+'Sign'])+'%</span><span>Agreements → contracts: '+dec(s[side+'Close'])+'%</span><span>Contracts → closings: '+dec(s[side+'ContractClose'])+'%</span></div></section>').join('')+'</div>';
+ if($('calculationDetails'))$('calculationDetails').innerHTML='<p>The model first finds the GCI that covers your income goal and business costs. Your listing/buyer share and average GCI per closed side determine the units needed. Whole-unit commitments round up, and costs are recalculated for that plan.</p><div class="detail-columns">'+['seller','buyer'].map(side=>'<section><h4>'+(side==='seller'?'Seller Business':'Buyer Business')+'</h4>'+[
+ ['Selected share of closed units',dec(side==='seller'?s.sellerShare:100-s.sellerShare)+'%'],['Average GCI per closed side',money(s[side+'Commission'])],['Estimated Sales Price '+(side==='seller'?'Seller':'Buyer'),money(p[side+'Price'])],['Estimated annual closed volume',money(p[side+'Volume'])],['Contracts needed / year',E.up(p[side+'Contracts'])]].map(([label,value])=>'<div class="detail-row"><span>'+label+'</span><strong>'+value+'</strong></div>').join('')+'</section>').join('')+'</div><p>Closings divided by the contract-to-closing rate gives contracts needed. Contracts divided by the agreement-to-contract rate gives agreements needed. Agreements divided by the appointment-to-agreement rate gives appointments needed.</p><p>Monthly appointments divide each side’s annual appointment need by 12; weekly appointments divide it by '+dec(s.weeks)+' working weeks. Round each side up for practical commitments. Estimated volume uses the automatically estimated sale prices and planned closed units; it is a reference, not a market valuation.</p>';
  if($('outcomeSummary')){
-  const after=life.afterTax||Math.max(0,goal()-(life.taxes||0)),vol=p.volume==null?'volume will calculate after average sale prices are entered':money(p.volume)+' in closed volume';
-  $('outcomeSummary').innerHTML='<section class="outcome-box"><div class="eyebrow">YOUR ECONOMIC MODEL</div><p>To earn <strong>'+money(goal())+' before taxes</strong> and fund approximately <strong>'+money(after)+' after taxes</strong>, your business needs to close <strong>'+p.sales+' units</strong> ('+p.sellerSales+' closed listings and '+p.buyerSales+' closed buyers), generating <strong>'+vol+'</strong> and <strong>'+money(p.gci)+' in total closed GCI</strong>, for a final estimated profit margin of <strong>'+dec(p.margin)+'%</strong>.</p><p>You can adjust conversion rates and weeks worked below. The model starts with five weeks off each year.</p></section>';
+  const hasAfter=s.goalMode==='life'&&Number.isFinite(life.afterTax);
+  $('outcomeSummary').innerHTML='<section class="outcome-box"><div class="eyebrow">THE BUSINESS THAT FUNDS YOUR LIFE</div><p>To fund your <strong>'+money(goal())+' owner income goal before personal taxes</strong>'+(hasAfter?' and <strong>'+money(life.afterTax)+' in after-tax life needs</strong>':'')+', plan for <strong>'+p.sales+' closed units</strong> ('+p.sellerSales+' seller + '+p.buyerSales+' buyer), <strong>'+money(p.gci)+' in annual GCI</strong>, and approximately <strong>'+money(p.volume)+' in estimated closed volume</strong>.</p><p>Your planned owner income after business expenses is '+money(p.profit)+', before personal taxes. The resulting profit margin is '+dec(p.margin)+'%. These projections depend on the assumptions you entered above.</p></section>';
  }
- if($('economicOutputs'))$('economicOutputs').innerHTML='<h3>How the Income Goal Becomes GCI</h3>'+[['Life by Design owner income target',goal()],['+ Cost of Sales',p.cos],['+ Fixed & operating expenses',p.opex],['= Total closed GCI required',p.gci]].map(([l,v],i)=>'<div class="money-line '+(i===3?'total':'')+'"><span>'+l+'</span><strong>'+money(v)+'</strong></div>').join('')+'<div class="money-line"><span>Estimated profit margin</span><strong>'+dec(p.margin)+'%</strong></div>';
- if($('pipeline'))$('pipeline').innerHTML='<div class="pipeline">'+['seller','buyer'].map(side=>{const isSeller=side==='seller',share=isSeller?s.sellerShare:100-s.sellerShare;return '<section><h3>'+(isSeller?'Listings / Sellers':'Buyers')+'</h3>'+[
- ['Share of closed units',dec(share)+'%'],['Average GCI per closed unit',money(s[side+'Commission'])],['Average closed price',s[side+'Price']?money(s[side+'Price']):'Not entered'],['Annual GCI',money(p[side+'Gci'])],['Closed units needed',p[side+'Sales']],['Signed agreements needed',Math.ceil(p[side+'Signed']-1e-9)],['Contracts written / pended',Math.ceil(p[side+'Contracts']-1e-9)],['Held appointments / year',Math.ceil(p[side+'Appointments']-1e-9)],['Appointments / month',p[side+'Monthly']],['Appointments / working week',p[side+'Weekly']]].map(([l,v],i)=>'<div class="pipe-row '+([4,5,6,8,9].includes(i)?'key-outcome':'')+'"><span>'+l+'</span><strong>'+v+'</strong></div>').join('')+'</section>';}).join('')+'</div>';
- if($('fourConversations')){
-  const appointments=Math.ceil(p.sellerAppointments+p.buyerAppointments),agreements=Math.ceil(p.sellerSigned+p.buyerSigned),contracts=Math.ceil(p.sellerContracts+p.buyerContracts);
-  $('fourConversations').innerHTML=conversationRow('appointments','1. Appointments Needed',appointments)+conversationRow('agreements','2. Listing Agreements + Buyer Broker Agreements',agreements)+'<div class="conversation-row qualitative"><div><strong>3. Customer Service Value Proposition</strong><small>Your service standard and how you help clients achieve their goals. Developed separately.</small></div><div class="conversation-note">Framework component</div></div>'+conversationRow('contracts','4. Contracts Written / Pended',contracts)+conversationRow('gci','5. Gross Commission Income',p.gci,'money');
- }
+ if($('fourConversations'))$('fourConversations').innerHTML=fourConversations(p);
  if($('bottomSummary'))$('bottomSummary').innerHTML=modelSummaryBox(p);
  if($('nextStage'))$('nextStage').hidden=!(s.saved?.fingerprint===fingerprint()&&storageOK);
  if($('savedNote'))$('savedNote').textContent=s.saved?.fingerprint===fingerprint()?(storageOK?'Economic Model saved in this browser.':'Model set for this session. Save a backup before closing.'):'Save your model when the assumptions reflect the business you intend to run.';
@@ -191,14 +193,16 @@ $('stage').addEventListener('input',e=>{
   const k=el.dataset.key,v=el.value===''?NaN:Number(el.value);
   if(k==='overhead'){if(Number.isFinite(v)&&v>=0){const before=monthlyFixed(),base=E.BASE.fixed.reduce((a,x)=>a+x[2],0);s.fixed.forEach((x,i)=>{x.monthly=before?x.monthly/before*v:(i<E.BASE.fixed.length?E.BASE.fixed[i][2]/base*v:0);});}else{toast('Operating budget must be a nonnegative amount.');return;}}
   else s[k]=k==='sellerShare'&&Number.isFinite(v)?Math.round(v):v;
-  sync(k,k==='sellerShare'?s[k]:v,el);persist();render();return;
+  if(k==='sellerCommission'||k==='buyerCommission'){const side=k.startsWith('seller')?'seller':'buyer';s[side+'Price']=E.estimatedPrice(v);}
+  sync(k,k==='sellerShare'?s[k]:v,el);
+  if(k==='overhead')document.querySelectorAll('[data-fixed-monthly],[data-fixed-annual]').forEach(input=>{const x=s.fixed.find(x=>x.id===(input.dataset.fixedMonthly||input.dataset.fixedAnnual));if(x)input.value=Math.round(x.monthly*(input.dataset.fixedAnnual?12:1)*100)/100;});
+  persist();numbers();return;
  }
  if(el.dataset.fixedMonthly){const x=s.fixed.find(x=>x.id===el.dataset.fixedMonthly);if(x)x.monthly=el.value===''?0:Number(el.value);persist();numbers();const annual=el.closest('.fixed-expense')?.querySelector('[data-fixed-annual]');if(annual)annual.value=Math.round(x.monthly*12*100)/100;sync('overhead',monthlyFixed(),el);return;}
  if(el.dataset.fixedAnnual){const x=s.fixed.find(x=>x.id===el.dataset.fixedAnnual);if(x)x.monthly=(el.value===''?0:Number(el.value))/12;persist();numbers();const monthly=el.closest('.fixed-expense')?.querySelector('[data-fixed-monthly]');if(monthly)monthly.value=Math.round(x.monthly*100)/100;sync('overhead',monthlyFixed(),el);return;}
  if(el.dataset.variable){const x=s.variable.find(x=>x.id===el.dataset.variable);if(x)x.amount=el.value===''?0:Number(el.value);}
  if(el.dataset.name){const x=s.fixed.find(x=>x.id===el.dataset.name);if(x)x.name=el.value;}
  if(el.dataset.vname){const x=s.variable.find(x=>x.id===el.dataset.vname);if(x)x.name=el.value;}
- if(el.dataset.actual){s.actuals[el.dataset.actual]=el.value===''?0:Number(el.value);}
  persist();numbers();
 });
 $('stage').addEventListener('change',e=>{

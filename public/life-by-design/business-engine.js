@@ -4,6 +4,9 @@
  * No requests or personal data leave the browser. */
 (function(root){
 'use strict';
+// Internal planning assumption for reference volume; not a market average.
+const VOLUME_ESTIMATE_RATE=.028;
+const estimatedPrice=commission=>commission/VOLUME_ESTIMATE_RATE;
 const BASE={gci:180000,cos:21000,salary:20000,lead:18000,fixed:[
  ['occupancy','Office / occupancy',1500,'Workspace, rent and utilities. Do not repeat brokerage desk fees.'],
  ['technology','Technology',4000,'CRM, website, software and business subscriptions.'],
@@ -19,8 +22,8 @@ const budget=(s,key,calculated)=>finite(s.budgets?.[key])?s.budgets[key]:calcula
 const rate=(s,side,name)=>s[side+name]??s[name[0].toLowerCase()+name.slice(1)];
 function defaults(target=100000){
  const seed=(target>0?target:100000)/.665;
- return {version:3,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
- sellerCommission:10000,buyerCommission:10000,sellerPrice:0,buyerPrice:0,sellerShare:50,weeks:47,
+ return {version:4,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
+ sellerCommission:10000,buyerCommission:10000,sellerPrice:estimatedPrice(10000),buyerPrice:estimatedPrice(10000),sellerShare:50,weeks:47,
  sellerSign:80,sellerClose:65,buyerSign:65,buyerClose:80,sellerContractClose:100,buyerContractClose:100,
  admin1:4000,admin2:4000,supportShare:100,buyerSplit:50,showingMode:'closing',showingFee:500,showingMonthly:3000,
  cosMode:'detail',cosPercent:BASE.cos/BASE.gci*100,brokerPercent:30,brokerCapEnabled:true,brokerCap:18000,
@@ -77,11 +80,11 @@ function breakdown(s,gci,closed){
  const admin=(s.level>=2?s.admin1*12:0)+(s.level>=3?s.admin2*12:0);
  const fixed=s.fixed.reduce((a,x)=>a+x.monthly*12,0),lead=budget(s,'lead',gci*s.leadPercent/100);
  const opex=admin+fixed+lead+showingSalary,profit=gci-cos-opex;
- const hasVolume=(!sellerClosed||s.sellerPrice>0)&&(!buyerClosed||s.buyerPrice>0);
- const sellerVolume=sellerClosed*(s.sellerPrice||0),buyerVolume=buyerClosed*(s.buyerPrice||0);
+ const sellerPrice=estimatedPrice(s.sellerCommission),buyerPrice=estimatedPrice(s.buyerCommission);
+ const sellerVolume=sellerClosed*sellerPrice,buyerVolume=buyerClosed*buyerPrice;
  return {gci,sellerGci,buyerGci,sellerClosed,buyerClosed,sellerContracts,buyerContracts,sellerSigned,buyerSigned,sellerAppointments,buyerAppointments,
  broker,franchise,allowance,desk,sellerReferrals,buyerReferrals,referrals,support,showingSalary,variable,variableTotal,cos,admin,fixed,lead,opex,profit,
- margin:gci?profit/gci*100:0,sellerVolume,buyerVolume,volume:hasVolume?sellerVolume+buyerVolume:null};
+ margin:gci?profit/gci*100:0,sellerPrice,buyerPrice,sellerVolume,buyerVolume,volume:sellerVolume+buyerVolume};
 }
 function activities(r,s){
  for(const side of ['seller','buyer']){r[side+'Monthly']=up(r[side+'Appointments']/12);r[side+'Weekly']=up(r[side+'Appointments']/s.weeks);r[side+'Sales']=up(r[side+'Closed']);r[side+'AgreementsMonthly']=up(r[side+'Signed']/12);r[side+'ContractsMonthly']=up(r[side+'Contracts']/12);}
@@ -114,7 +117,7 @@ function lifeTarget(raw){
  if(!finite(p,0.01,1e10))return{error:'The saved life target is not valid.'};
  return{value:p,taxes:raw.handoff.annualTaxReserve,afterTax:raw.handoff.annualAfterTaxNeeds??p-raw.handoff.annualTaxReserve,savedAt:raw.handoff.savedAt};
 }
-const api={BASE,defaults,validate,breakdown,solve,lifeTarget,up};
+const api={BASE,defaults,validate,breakdown,solve,lifeTarget,up,estimatedPrice};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;
 root.LBDBusiness=api;
 })(typeof window==='undefined'?globalThis:window);
