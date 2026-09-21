@@ -1,40 +1,54 @@
 (function(root){
 'use strict';
-const VERSION='2026-09-20-test-v1';
+const VERSION='2026-09-21-database-only-v3',L=root.LBDTouchLibrary;
 const GROUPS=['A & W','B & E','D & O','H & V','C & K','F & G','M & X','N & R','S & U','P & L','T & J','I & Q'];
-const INTENTS=['Relationship Reset','Value Calibration','Opportunity Awareness','Advocacy / Referral'];
-const THEMES=['Goals and plans for the year','A useful local resource','Home care and seasonal needs','What matters in your neighborhood','Understanding your property options','Midyear plans and priorities','Local people and community connections','Planning a future move','Preparing for the next season','Homeownership questions answered','Gratitude and personal connection','Looking ahead together'];
-const SEGMENTS=[['advocates','A+ — Advocates','Deep trust, active referrers and a strong personal connection. Thank them personally and offer thoughtful introductions.'],['strong','A — Strong relationships','High trust; likely to refer when asked appropriately. Connect the topic to their goals and interests.'],['warm','B — Warm relationships','They know you, but the relationship is still developing. Ask useful questions and follow through on what you learn.'],['weak','C — Familiar contacts','They may remember you, but you have little recent conversation history. Reintroduce your connection and discover what would be useful.']];
-const date=(year,month,day)=>new Date(Date.UTC(year,month,day)).toISOString().slice(0,10);
-function source(gps,business,life){
- if(!gps?.plan||!gps.saved||gps.saved.signature!==JSON.stringify([gps.plan,gps.edits]))throw Error('Review and save your GPS before building your touch plan.');
- const src=root.LBDGPS.source(business,life);
- if(gps.plan.sourceFingerprint!==src.fingerprint||gps.plan.templateVersion!==root.LBDGPSTemplates.version)throw Error('Your GPS needs refreshed targets. Review the Economic Model, then refresh and save your GPS.');
- return {signature:gps.saved.signature,gps:gps.plan};
+const INTENTS=['Reconnect and understand their plans','Follow through and offer useful help','Review changing priorities','Appreciate the relationship and look ahead'];
+const SEGMENTS=[['advocates','A+ — Advocates','Strong personal trust and active referral relationships.'],['strong','A — Strong relationships','They know and trust you; stay personally connected.'],['warm','B — Warm relationships','Build familiarity through useful conversations and follow-through.'],['weak','C — Current clients and familiar contacts','Current clients and people familiar with you. Routine transaction updates do not replace relationship nurture.']];
+const CATEGORIES=[['Market & Neighborhood Knowledge',[['market_review','Neighborhood Nurtures'],['neighborhood_change','Local developments'],['decision_brief','Understanding the market']]],['Homeownership Help',[['maintenance','Maintenance resources'],['resource_delivery','Useful homeowner resources']]],['Personal Relationships',[['relationship_nurture','Relationship calls'],['preference_reconnection','Shared interests and useful topics']]],['Client Events & Community',[['community_experiences','Community and lifestyle activities'],['education_experiences','Educational gatherings']]],['Real Estate Opportunities & Results',[['buyer_opportunity','A home for this buyer'],['seller_opportunity','A buyer for this home'],['client_results','Real client stories']]]];
+const allowed=CATEGORIES.flatMap(c=>c[1].map(x=>x[0])),date=(y,m,d)=>new Date(Date.UTC(y,m,d)).toISOString().slice(0,10),add=(d,n)=>new Date(Date.parse(d)+n*86400000).toISOString().slice(0,10),hash=s=>Array.from(String(s)).reduce((n,c)=>(Math.imul(n,31)+c.charCodeAt(0))>>>0,7);
+function source(gps,business,life){if(!gps?.plan||!gps.saved||gps.saved.signature!==JSON.stringify([gps.plan,gps.edits]))throw Error('Review and save your GPS before building your touch plan.');const src=root.LBDGPS.source(business,life);if(gps.plan.sourceFingerprint!==src.fingerprint||gps.plan.templateVersion!==root.LBDGPSTemplates.version)throw Error('Review the Economic Model, then refresh and save your GPS.');return{signature:gps.saved.signature,gps:gps.plan};}
+function defaults(){return{cadence:36,advocates:10,strong:20,warm:30,weak:40,preferences:['market_review','maintenance','buyer_opportunity','seller_opportunity','community_experiences','education_experiences','client_results'],events:2,eventDates:[],seed:1};}
+function dates(start,count){const[y,m]=start.split('-').map(Number);return Array.from({length:count},(_,i)=>date(y,m-1+Math.floor((i+1)*12/(count+1)),20));}
+function segmentCounts(i,mets){const exact=SEGMENTS.map(([k])=>mets*i[k]/100),a=exact.map(Math.floor),remaining=mets-a.reduce((n,x)=>n+x,0),order=exact.map((v,j)=>({j,f:v-a[j]})).sort((x,y)=>y.f-x.f||x.j-y.j);for(let j=0;j<remaining;j++)a[order[j%4].j]++;return Object.fromEntries(SEGMENTS.map(([k],j)=>[k,a[j]]));}
+function validate(i,mets,start){
+ if(![36,72].includes(i.cadence))throw Error('Choose 36 or 72 touches.');
+ if(!Array.isArray(i.preferences)||!i.preferences.length||i.preferences.some(x=>!allowed.includes(x))||new Set(i.preferences).size!==i.preferences.length)throw Error('Select at least one content preference.');
+ if(SEGMENTS.some(([k])=>!Number.isFinite(i[k])||i[k]<0||i[k]>100)||Math.abs(SEGMENTS.reduce((n,[k])=>n+i[k],0)-100)>.001)throw Error('Your estimated segment percentages must total 100%.');
+ if(!Number.isInteger(mets)||mets<0)throw Error('Review the database count in your GPS.');
+ if(!Number.isInteger(i.events)||i.events<2||i.events>6)throw Error('Plan two to six client events for the year.');
+ if(!Array.isArray(i.eventDates)||i.eventDates.length!==i.events)throw Error('Choose a date for every event.');
+ const[y,m]=start.split('-').map(Number),first=date(y,m-1,1),last=date(y,m+11,0),sorted=[...i.eventDates].sort();
+ for(let j=0;j<sorted.length;j++){const d=sorted[j];if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!Number.isFinite(Date.parse(d))||new Date(d).toISOString().slice(0,10)!==d||d<add(first,30)||d>add(last,-7))throw Error('Event dates need 30 days for invitations and seven days for follow-up within your plan.');if(j&&Date.parse(d)-Date.parse(sorted[j-1])<40*86400000)throw Error('Space client events at least 40 days apart.');}
 }
-function defaults(){return {cadence:36,segmented:false,advocates:0,strong:0,warm:0,weak:0,channels:['email'],events:0,callMinutes:10,workdays:5};}
-function validate(input,mets){
- if(![36,72].includes(input.cadence))throw Error('Choose 36 or 72 touches.');
- if(!Array.isArray(input.channels)||!input.channels.length||new Set(input.channels).size!==input.channels.length||input.channels.some(c=>!['email','mail','text'].includes(c)))throw Error('Choose at least one way to deliver your regular touches.');
- for(const [key] of SEGMENTS)if(!Number.isInteger(input[key])||input[key]<0||input[key]>1000000)throw Error('Enter whole, non-negative segment counts.');
- if(input.segmented&&SEGMENTS.reduce((n,[key])=>n+input[key],0)!==mets)throw Error('Your segment counts must add up to the '+mets+' mets saved in your GPS.');
- if(!Number.isInteger(input.events)||input.events<0||input.events>12)throw Error('Enter between 0 and 12 existing events for the year.');
- if(!Number.isFinite(input.callMinutes)||input.callMinutes<1||input.callMinutes>60)throw Error('Allow 1–60 minutes per planned call.');
- if(!Number.isInteger(input.workdays)||input.workdays<1||input.workdays>7)throw Error('Choose 1–7 planned workdays per week.');
-}
+function content(r){return{libraryId:r.id,family:r.family,title:r.title,purpose:r.execution,nextAction:r.nextAction,prerequisites:r.prerequisites,fallback:r.fallback,audience:r.audience,conditional:r.trigger!=='Scheduled',channel:r.method};}
+function pool(f){return L.filter(r=>r.scope==='database-nurture'&&r.family===f&&(f!=='market_review'||r.id==='T003'));}
 function generate(input,src){
- const gps=src.gps,mets=gps.input.mets;validate(input,mets);const [y,m]=gps.input.start.split('-').map(Number),perMonth=input.cadence/12,slots=[];let channelIndex=0;
- for(let month=0;month<12;month++)for(let i=0;i<perMonth;i++){
-  const call=month%3===0&&i===0,quarter=Math.floor(month/3),day=perMonth===3?[5,15,25][i]:[3,8,13,18,23,28][i],channel=call?'call':input.channels[channelIndex++%input.channels.length];
-  slots.push({id:'m'+month+'t'+i,month,quarter,date:date(y,m-1+month,call?1:day),end:call?date(y,m+month+2,0):null,channel,title:call?INTENTS[quarter]+' call':THEMES[month]+(i%2?' — share a useful resource':' — invite a personal response'),purpose:call?['Reconnect, ask what has changed, and record a useful next step.','Learn which information or support matters to this person.','Explore upcoming needs and offer relevant help or introductions.','Thank them for the relationship and invite an appropriate introduction.'][quarter]:'Relate this topic to what you know about the person. Offer one useful takeaway and a natural reason to respond.',audience:'Every met contact',notes:''});
+ const i={...input,eventDates:input.eventDates?.length?[...input.eventDates]:dates(src.gps.input.start,input.events)},gps=src.gps;validate(i,gps.input.mets,gps.input.start);
+ const[y,m]=gps.input.start.split('-').map(Number),slots=[],monthOf=d=>(+d.slice(0,4)-y)*12+(+d.slice(5,7)-m),push=(d,x)=>{slots.push({id:'s'+slots.length,date:d,month:monthOf(d),notes:'',...x});return slots.at(-1);};
+ const quarters=INTENTS.map((intent,q)=>{const start=date(y,m-1+q*3,1),end=date(y,m+q*3+2,0),days=(Date.parse(end)-Date.parse(start))/86400000+1;return{intent,start,end,groups:[...GROUPS,'Flex: Y / Z, other names and follow-up'].map((letters,j)=>({letters,week:j+1,date:add(start,Math.floor(j*days/13))}))};});
+ for(let month=0;month<12;month++){const cm=(m-1+month)%12,market=cm%3===0,r=L.find(r=>r.scope==='database-nurture'&&r.id===(cm===0?'T001':market?'T002':['T031','T032','T033','T034','T037','T039','T040'][hash(i.seed+':news:'+month)%7]));push(date(y,m-1+month,5),{...content(r),kind:'newsletter',locked:true,channel:'EMAIL',title:cm===0?'Your local year in review':market?'Your quarterly market perspective':r.title,purpose:r.execution+' Include a relevant community or ownership item. Event details can be included here; count the whole newsletter once.',conditional:false});}
+ const calls=quarters.map((q,n)=>push(add(q.start,14),{kind:'quarterly',locked:true,quarter:n,end:q.end,channel:'CALL',title:'Quarter '+(n+1)+': '+q.intent,purpose:'Have a meaningful personal conversation with every met in this quarter using the DTD letter rotation. Record the next step; an unanswered attempt is not a completed conversation.',nextAction:'What has changed, and how can I help?',audience:'Every met contact',fallback:'Reschedule respectfully if not reached.'}));
+ for(const[n,d]of [...i.eventDates].sort().entries()){const save=add(d,-28),q=quarters.findIndex(q=>save>=q.start&&save<=q.end),call=calls[q],invite={title:'Event '+(n+1)+': save the date and catch up',purpose:'Call about your confirmed event on '+d+'. Catch up personally and invite them. Include written details in the monthly newsletter rather than counting the invitation twice.',nextAction:'Can you join us, and how have things been?'};
+  if(call&&!call.eventId)Object.assign(call,invite,{eventId:n+1,date:save,month:monthOf(save)});else push(save,{...invite,kind:'event-invite',locked:true,channel:'CALL',eventId:n+1});
+  push(add(d,-7),{kind:'event-rsvp',locked:true,eventId:n+1,channel:'CALL',title:'Event '+(n+1)+': RSVP conversation',purpose:'Confirm interest and answer questions. If they already declined, use a useful personal catch-up instead of repeating the invitation.',nextAction:'Will you be able to join us?'});
+  push(d,{kind:'event',locked:true,eventId:n+1,channel:'IN PERSON',title:'Event '+(n+1)+': client appreciation gathering',purpose:'Have a meaningful personal exchange at the event. Attendance alone is not a completed conversation.',nextAction:'What has been happening since we last caught up?',fallback:'Nonattendee: replace this with a missed-you personal call after the event; never count attendance that did not happen.'});
+  push(add(d,4),{kind:'event-followup',locked:true,eventId:n+1,channel:'TEXT',title:'Event '+(n+1)+': thank you and follow-through',purpose:'Thank attendees for joining the gathering and reference a shared moment. Keep transaction questions and active opportunities in your separate client/lead follow-up.',nextAction:'What did you enjoy most about the gathering?',fallback:'Nonattendee: use a relevant homeownership resource later instead. If included in the missed-you call, count one and move another useful touch to a later welcome opportunity.'});
  }
- // Existing events replace ordinary slots; they never increase the annual count.
- for(let i=0;i<input.events;i++){const month=Math.floor(i*12/input.events),slot=slots.filter(s=>s.month===month&&s.channel!=='call').at(-1);slot.channel='event';slot.title='Existing client or community event';slot.purpose='Invite contacts for whom the event is relevant. For everyone else, substitute a useful personal update in this same slot. Count it once, not as an extra touch.';}
- const calls=mets*4,weeklyCalls=Math.max(10,Math.ceil(calls/gps.goal.weeks));
- const prep={email:30,mail:60,text:mets*2,event:120};
- const annualMinutes=calls*input.callMinutes+slots.filter(s=>s.channel!=='call').reduce((n,s)=>n+prep[s.channel],0);
- const quarters=INTENTS.map((intent,q)=>{const start=date(y,m-1+q*3,1),end=date(y,m+q*3+2,0),days=(Date.parse(end)-Date.parse(start))/86400000+1;return {intent,start,end,groups:[...GROUPS,'Flex: Y / Z, other names and follow-up'].map((letters,i)=>({letters,week:i+1,date:new Date(Date.parse(start)+Math.floor(i*days/13)*86400000).toISOString().slice(0,10)}))};});
- return {version:VERSION,sourceSignature:src.signature,input:{...input},blueprint:gps.blueprintName,start:gps.input.start,mets,goal:gps.goal,databaseGrowth:gps.database.monthly,slots,quarters,calls,weeklyCalls,annualMinutes,weeklyHours:annualMinutes/gps.goal.weeks/60,availableHours:gps.input.minutes*input.workdays/60,counts:{calls:4,regular:slots.filter(s=>!['call','event'].includes(s.channel)).length,events:input.events,total:slots.length}};
+ const available=i.cadence-slots.length,used=new Set(),alloc=Object.fromEntries(i.preferences.map(k=>[k,0]));
+ if(available<i.preferences.length)throw Error('This event plan leaves '+available+' content slots for '+i.preferences.length+' preferences. Choose fewer events/preferences or 72 touches.');
+ const limits={market_review:12,buyer_opportunity:4,seller_opportunity:4,property_review:1};
+ for(let n=0;n<available;n++){
+  const families=i.preferences.filter(k=>alloc[k]<(limits[k]||Math.min(12,pool(k).length)));if(!families.length)throw Error('Add another content preference for enough variety, or choose 36 touches.');
+  families.sort((a,b)=>alloc[a]-alloc[b]||hash(i.seed+a)-hash(i.seed+b));const family=families[0],candidates=pool(family).filter(r=>!used.has(r.id)||family==='market_review'),r=candidates[hash(i.seed+':'+family+':'+alloc[family])%candidates.length];used.add(r.id);alloc[family]++;
+  let best,score=-Infinity;for(let month=0;month<12;month++)for(const day of [10,15,20,25,28]){const d=date(y,m-1+month,day);if(slots.some(s=>s.kind==='content'&&s.month===month&&s.family===family))continue;if(['buyer_opportunity','seller_opportunity'].includes(family)&&slots.some(s=>s.family===family&&Math.floor(s.month/3)===Math.floor(month/3)))continue;const distance=Math.min(...slots.map(s=>Math.abs(Date.parse(s.date)-Date.parse(d))/86400000)),value=distance-slots.filter(s=>s.month===month).length*.3;if(value>score){score=value;best=d;}}
+  if(!best)throw Error('Choose more varied content preferences to space your plan well.');push(best,{...content(r),kind:'content',locked:false});
+ }
+ slots.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+ return{version:VERSION,sourceSignature:src.signature,input:i,blueprint:gps.blueprintName,start:gps.input.start,mets:gps.input.mets,goal:gps.goal,databaseGrowth:gps.database.monthly,slots,quarters,calls:gps.input.mets*4,weeklyCalls:Math.max(10,Math.ceil(gps.input.mets*4/gps.goal.weeks)),segments:segmentCounts(i,gps.input.mets),counts:{total:slots.length,quarterly:4,newsletters:12,eventAdditional:slots.filter(s=>s.kind.startsWith('event')).length,content:available},allocation:Object.fromEntries(i.preferences.map(k=>[k,slots.filter(s=>s.kind==='content'&&s.family===k).length]))};
 }
-root.LBDTouch={VERSION,GROUPS,INTENTS,SEGMENTS,defaults,validate,source,generate};
+function alternatives(p,id){const s=p.slots.find(x=>x.id===id);if(!s||s.locked)return[];return pool(s.family).filter(r=>!p.slots.some(x=>x.libraryId===r.id)).slice(0,10);}
+function replace(p,id,rid){const r=alternatives(p,id).find(r=>r.id===rid);if(!r)throw Error('Choose an available alternative for this touch.');return{...p,slots:p.slots.map(s=>s.id===id?{...s,...content(r),notes:''}:s)};}
+root.LBDTouch={VERSION,GROUPS,INTENTS,SEGMENTS,CATEGORIES,defaults,dates,validate,segmentCounts,source,generate,alternatives,replace};
 })(typeof window==='undefined'?globalThis:window);
+
+

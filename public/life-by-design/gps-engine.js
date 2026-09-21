@@ -24,7 +24,7 @@ function generate(input,src){
  const replacements={'daily lead-generation minutes':input.minutes,'appointments needed per working week':p.weekly,'weekly lead commitment':weeklyLeads,'monthly met additions':monthly};
  const fill=text=>text.replace(/\[([^\]]+)\]/g,(match,key)=>Object.hasOwn(replacements,key)?String(replacements[key]):match);
  const priorities=[...T.shared,template].map((item,i)=>({title:item.title,strategies:item.strategies.map(s=>({id:`p${i+1}s${s.number}`,title:s.title,text:fill(s.text)}))}));
- return {version:1,templateVersion:T.version,input:{...input},blueprintName:template.name,sourceFingerprint:src.fingerprint,goal:{listings:E.up(p.sellerSigned),closings:p.sales,gci:p.gci,profit:p.profit,weeks:src.weeks,weeklyAppointments:p.weekly},database:{target,gap,monthly,existingCapacity:input.mets*input.returnRate/100,weeklyCalls:Math.max(10,E.up(input.mets*4/src.weeks))},weeklyLeads,priorities};
+ return {version:1,templateVersion:T.version,input:{...input},blueprintName:template.name,sourceFingerprint:src.fingerprint,goal:{listings:E.up(p.sellerSigned),closings:p.sales,gci:p.gci,profit:p.profit,weeks:src.weeks,weeklyAppointments:p.weekly,weeklySellerAppointments:p.sellerWeekly,weeklyBuyerAppointments:p.buyerWeekly},database:{target,gap,monthly,existingCapacity:input.mets*input.returnRate/100,weeklyCalls:Math.max(10,E.up(input.mets*4/src.weeks))},weeklyLeads,priorities};
 }
 const api={source,validate,generate};if(typeof module!=='undefined'&&module.exports)module.exports=api;root.LBDGPS=api;
 })(typeof window==='undefined'?globalThis:window);
