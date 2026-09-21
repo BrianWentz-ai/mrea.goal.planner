@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {workbook,validatePlan} from '../lib/workbook.js';
+import {workbook,validatePlan,WORKBOOK_VERSION} from '../lib/workbook.js';
 const attempts=new Map();
 export function createHandler({env=process.env,fetcher=fetch,makePdf=workbook}={}){return async(req,res)=>{
  const reply=(status,data)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
@@ -17,7 +17,7 @@ export function createHandler({env=process.env,fetcher=fetch,makePdf=workbook}={
  const pdf=await makePdf(data);
  if(action==='preview'){res.setHeader('Content-Type','application/pdf');res.setHeader('Content-Disposition','attachment; filename="My-Business-Plan.pdf"');return res.end(pdf);}
  const email=data.profile.email.trim().toLowerCase();
- const id=createHash('sha256').update(JSON.stringify([email,data.business.saved,data.gps.saved,data.touch.saved,data.schedule,data.profile.name])).digest('hex');
+ const id=createHash('sha256').update(JSON.stringify([WORKBOOK_VERSION,email,data.business.saved,data.gps.saved,data.touch.saved,data.schedule,data.profile.name])).digest('hex');
  const result=await fetcher('https://api.resend.com/emails',{method:'POST',signal:AbortSignal.timeout(25000),headers:{Authorization:'Bearer '+env.RESEND_API_KEY,'Content-Type':'application/json','Idempotency-Key':'plan-'+id},body:JSON.stringify({from:'Life by Design <plans@brianwentz.com>',reply_to:'brian@brianwentz.com',to:[email],subject:'Your Life by Design Business Plan',text:'Your personalized business planning workbook is attached. It includes your Economic Model, GPS, touch calendar, weekly routine and planning worksheets. Keep this copy for your records.\n\nLife by Design | The Ascending Agent',html:'<div style="font-family:Arial;color:#0e2433;max-width:600px;margin:auto;padding:32px"><h1>Your business plan is ready.</h1><p>Your personalized workbook is attached, including your Economic Model, GPS, touch calendar, weekly routine and planning worksheets.</p><p>Give your goals a place on your calendar, then use your worksheets to review your progress.</p><p style="color:#23765f">Life by Design | The Ascending Agent</p></div>',attachments:[{filename:'My-Business-Plan.pdf',content:pdf.toString('base64')}]})});
  if(!result.ok)return reply(502,{error:'The email service could not accept your plan. Please retry or download your PDF.'});
  return reply(200,{accepted:true});
