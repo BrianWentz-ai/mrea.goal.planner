@@ -9,19 +9,21 @@ const VOLUME_ESTIMATE_RATE=.028;
 const estimatedPrice=commission=>commission/VOLUME_ESTIMATE_RATE;
 const BASE={gci:180000,cos:21000,salary:20000,lead:18000,fixed:[
  ['occupancy','Office / occupancy',1500,'Workspace, rent and utilities. Do not repeat brokerage desk fees.'],
- ['technology','Technology',4000,'CRM, website, software and business subscriptions.'],
+ ['technology','Technology',1800,'CRM, website, software and business subscriptions.'],
  ['phone','Phone / communications',2600,'Business phone and communication services only.'],
  ['supplies','Supplies',1800,'Office supplies, postage and administrative materials.'],
  ['education','Education / dues',1800,'Training, coaching, MLS, association dues and licensing.'],
  ['equipment','Equipment',3600,'A budget for computers, devices and equipment.'],
- ['auto','Auto / insurance',6000,'Business-only vehicle and insurance costs. Do not duplicate your household budget.']
+ ['auto','Auto / vehicle costs',0,'Business vehicle costs only. Do not duplicate your household budget.'],
+ ['insurance','Insurance',2100,'Business insurance coverage.'],
+ ['office-dues','Office dues',1500,'Recurring office membership and dues.']
 ]};
 const finite=(v,min=0,max=1e10)=>typeof v==='number'&&Number.isFinite(v)&&v>=min&&v<=max;
 const up=v=>v<=1e-10?0:Math.ceil(v-1e-9);
 const budget=(s,key,calculated)=>finite(s.budgets?.[key])?s.budgets[key]:calculated;
 const rate=(s,side,name)=>s[side+name]??s[name[0].toLowerCase()+name.slice(1)];
 function defaults(target=100000){
- const seed=(target>0?target:100000)/.665;
+ // Fixed-cost examples do not scale with the income target.
  return {version:4,page:0,level:1,support:'buyer',goalMode:'life',manualGoal:100000,
  sellerCommission:10000,buyerCommission:10000,sellerPrice:estimatedPrice(10000),buyerPrice:estimatedPrice(10000),sellerShare:50,weeks:47,
  sellerSign:80,sellerClose:65,buyerSign:65,buyerClose:80,sellerContractClose:90,buyerContractClose:90,
@@ -29,7 +31,7 @@ function defaults(target=100000){
  cosMode:'detail',cosPercent:BASE.cos/BASE.gci*100,brokerPercent:30,brokerCapEnabled:true,brokerCap:18000,
  franchisePercent:6,franchiseCapEnabled:true,franchiseCap:3000,deskMonthly:0,
  referralPercent:0,referralShare:0,sellerReferralPercent:0,sellerReferralShare:0,buyerReferralPercent:0,buyerReferralShare:0,leadPercent:10,budgets:{},actuals:{},
- fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:Math.round(cost/BASE.gci*seed/12),custom:false})),
+ fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:Math.round(cost/12*100)/100,custom:false})),
  variable:[{id:'tc-seller',name:'Seller transaction coordinator',amount:0,basis:'closing',scope:'seller'},
  {id:'photos-seller',name:'Listing photos / preparation',amount:0,basis:'signed',scope:'seller'},
  {id:'gifts-seller',name:'Seller closing gifts',amount:0,basis:'closing',scope:'seller'},
