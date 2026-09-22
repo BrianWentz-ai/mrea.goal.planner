@@ -18,3 +18,5 @@
 .economic-summary-blue p,.economic-summary-blue .help,.gps-goal small,.gps-panel:has(>.priority-label) small{color:#d5e1e8!important}
 .economic-summary-blue .eyebrow{color:#e2c665}.economic-summary-blue .result-row,#pipeline .pipeline .result-row,.gps-panel:has(>.priority-label)>h2{border-color:#405361!important}
 .gps-panel:has(>.priority-label) .database-summary{background:#233e4e;color:white}.gps-panel:has(>.priority-label) .database-summary p{color:#d5e1e8}.gps-panel:has(>.priority-label) .edit{color:#fff;border-color:#8aa6b6}.gps-panel:has(>.priority-label) textarea{color:#142834;background:white}
+
+.gps-panel .blueprint:has(input:checked),.gps-panel .blueprint:has(input:checked) strong,.gps-panel .blueprint:has(input:checked) small{color:#142834!important}
