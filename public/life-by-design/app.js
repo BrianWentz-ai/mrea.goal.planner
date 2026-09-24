@@ -56,8 +56,8 @@ const defs=[
 ]},
 {id:'security',nav:'Safety + freedom',title:'Build Your Reserves and Reduce Debt',desc:'Enter how much NEW money you want to set aside or pay down each month. Do not enter your current account balances.',groups:[
  group('reserves','Safety net','Cash you save now so a surprise does not become a crisis.',[
- ['Emergency savings','Set aside money for unexpected repairs, medical bills, or a true emergency. Example: build $12,000 over 12 months = $1,000/month.'],
- ['Reserve for Lower Income Months','Real estate income is uneven. Build a rainy-month fund as a financial safety net for periods without a closing or commission check. Enter the NEW amount you want to save, not your current reserve balance or your living expenses again. Include planned time off here if the same fund covers both needs.']
+ ['Personal Reserves','Set aside money for unexpected repairs, medical bills, or a true emergency. Example: build $12,000 over 12 months = $1,000/month.'],
+ ['Business Reserves','Real estate income is uneven. Build a rainy-month fund as a financial safety net for periods without a closing or commission check. Enter the NEW amount you want to save, not your current reserve balance or your living expenses again. Include planned time off here if the same fund covers both needs.']
  ],'Use (your goal minus what you already have saved) divided by the months you want to take. Example: ($18,000 - $6,000) / 12 = $1,000/month. If one fund covers emergencies AND slow months, enter it only once.'),
  group('opportunities','Opportunity fund','Money available when the right opportunity appears.',[
  ['Opportunity cash','Build ready-to-use cash for a future opportunity, investment, or major decision. Example: $6,000 more saved this year = $500/month.']

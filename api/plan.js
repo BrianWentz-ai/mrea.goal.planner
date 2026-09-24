@@ -7,7 +7,7 @@ export function createHandler({env=process.env,fetcher=fetch,makePdf=workbook}={
  const reply=(status,data)=>{res.statusCode=status;res.setHeader('Content-Type','application/json');res.end(JSON.stringify(data));};
  res.setHeader('Cache-Control','no-store');
  if(req.method!=='POST')return reply(405,{error:'Use the plan delivery form.'});
- if(req.headers.origin && !['https://mrea-goal-planner.vercel.app',...(env.VERCEL_URL?['https://'+env.VERCEL_URL]:[]),...(env.NODE_ENV!=='production'?['http://127.0.0.1:4184','http://127.0.0.1:4186']:[])].includes(req.headers.origin))return reply(403,{error:'Open the delivery form from Life by Design.'});
+ if(req.headers.origin && !['https://mrea-goal-planner.vercel.app',...(env.VERCEL_URL?['https://'+env.VERCEL_URL]:[]),...(env.NODE_ENV!=='production'?['http://127.0.0.1:4184','http://127.0.0.1:4191']:[])].includes(req.headers.origin))return reply(403,{error:'Open the delivery form from Life by Design.'});
  let data;try{data=typeof req.body==='string'?JSON.parse(req.body):req.body;validatePlan(data);}catch(e){return reply(400,{error:e instanceof TypeError?'Review and save each step before sending.':e.message});}
  const action=new URL(req.url,'http://localhost').searchParams.get('action');
  if(!['preview','package','send'].includes(action))return reply(400,{error:'Choose preview or send.'});

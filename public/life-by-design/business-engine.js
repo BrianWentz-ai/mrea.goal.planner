@@ -30,7 +30,7 @@ function defaults(target=100000){
  admin1:4000,admin2:4000,supportShare:100,buyerSplit:50,showingMode:'closing',showingFee:500,showingMonthly:3000,
  cosMode:'detail',cosPercent:BASE.cos/BASE.gci*100,brokerPercent:30,brokerCapEnabled:true,brokerCap:18000,
  franchisePercent:6,franchiseCapEnabled:true,franchiseCap:3000,deskMonthly:0,
- referralPercent:0,referralShare:0,sellerReferralPercent:0,sellerReferralShare:0,buyerReferralPercent:0,buyerReferralShare:0,leadPercent:10,budgets:{},actuals:{},
+ referredClosings:1,referralFeePercent:25,referralPercent:0,referralShare:0,sellerReferralPercent:0,sellerReferralShare:0,buyerReferralPercent:0,buyerReferralShare:0,leadPercent:10,budgets:{},actuals:{},
  fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:Math.round(cost/12*100)/100,custom:false})),
  variable:[{id:'tc-seller',name:'Seller transaction coordinator',amount:0,basis:'closing',scope:'seller'},
  {id:'photos-seller',name:'Listing photos / preparation',amount:0,basis:'signed',scope:'seller'},
@@ -48,6 +48,7 @@ function validate(s,target){
  for(const side of ['seller','buyer'])for(const k of ['ReferralPercent','ReferralShare'])if(!finite(rate(s,side,k),0,100))return 'Referral percentages must be between 0% and 100%.';
  for(const k of ['admin1','admin2','showingFee','showingMonthly','brokerCap','franchiseCap','deskMonthly'])if(!finite(s[k]))return 'Costs must be valid, nonnegative amounts.';
  for(const k of ['sellerPrice','buyerPrice'])if(!finite(s[k]??0))return 'Sale prices must be nonnegative amounts.';
+ if(s.referredClosings!==undefined&&(!Number.isInteger(s.referredClosings)||!finite(s.referredClosings,0,10000)||!finite(s.referralFeePercent,0,100)))return 'Enter a whole number of referred closings and a referral fee from 0% to 100%.';
  if(!finite(s.weeks,1,52))return 'Working weeks must be between 1 and 52.';
  if(!['allowance','detail'].includes(s.cosMode)||!['closing','monthly'].includes(s.showingMode))return 'Check your cost settings.';
  if(!Array.isArray(s.fixed)||!Array.isArray(s.variable)||s.fixed.length>1000||s.variable.length>1000)return 'Check your expense categories.';
@@ -67,8 +68,8 @@ function breakdown(s,gci,closed){
  const broker=s.cosMode==='detail'?budget(s,'broker',Math.min(gci*s.brokerPercent/100,s.brokerCapEnabled?s.brokerCap:Infinity)):0;
  const franchise=s.cosMode==='detail'?budget(s,'franchise',Math.min(gci*s.franchisePercent/100,s.franchiseCapEnabled?s.franchiseCap:Infinity)):0;
  const allowance=s.cosMode==='allowance'?gci*s.cosPercent/100:0,desk=s.cosMode==='detail'?s.deskMonthly*12:0;
- const sellerReferrals=budget(s,'sellerReferrals',sellerGci*rate(s,'seller','ReferralShare')/100*rate(s,'seller','ReferralPercent')/100);
- const buyerReferrals=budget(s,'buyerReferrals',buyerGci*rate(s,'buyer','ReferralShare')/100*rate(s,'buyer','ReferralPercent')/100);
+ const sellerReferrals=s.referredClosings!==undefined?s.referredClosings*average*s.referralFeePercent/100*mix:budget(s,'sellerReferrals',sellerGci*rate(s,'seller','ReferralShare')/100*rate(s,'seller','ReferralPercent')/100);
+ const buyerReferrals=s.referredClosings!==undefined?s.referredClosings*average*s.referralFeePercent/100*(1-mix):budget(s,'buyerReferrals',buyerGci*rate(s,'buyer','ReferralShare')/100*rate(s,'buyer','ReferralPercent')/100);
  const referrals=sellerReferrals+buyerReferrals;
  let support=0,showingSalary=0;
  if(s.level===4){if(s.support==='buyer')support=budget(s,'support',buyerGci*s.supportShare/100*s.buyerSplit/100);
