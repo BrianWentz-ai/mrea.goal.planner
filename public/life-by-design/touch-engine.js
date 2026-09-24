@@ -14,7 +14,7 @@ function validate(i,mets,start){
  if(!['monthly','quarterly'].includes(i.newsletterFrequency||'monthly')||!['EMAIL','MAILER'].includes(i.newsletterChannel||'EMAIL'))throw Error('Choose a newsletter frequency and delivery method.');
  if(i.preferences?.includes('monthly_events')&&i.preferences.includes('quarterly_events'))throw Error('Choose monthly or quarterly local event guides, not both.');
  if(![36,72].includes(i.cadence))throw Error('Choose 36 or 72 touches.');
- if(!Array.isArray(i.preferences)||!i.preferences.length||i.preferences.some(x=>!allowed.includes(x))||new Set(i.preferences).size!==i.preferences.length)throw Error('Select at least one content preference.');
+ if(!Array.isArray(i.preferences)||i.preferences.some(x=>!allowed.includes(x))||new Set(i.preferences).size!==i.preferences.length)throw Error('Select at least one content preference.');
  if(SEGMENTS.some(([k])=>!Number.isFinite(i[k])||i[k]<0||i[k]>100)||Math.abs(SEGMENTS.reduce((n,[k])=>n+i[k],0)-100)>.001)throw Error('Your estimated segment percentages must total 100%.');
  if(!Number.isInteger(mets)||mets<0)throw Error('Review the database count in your GPS.');
  if(!Number.isInteger(i.events)||i.events<0||i.events>6)throw Error('Choose zero to six client events for the year.');
@@ -56,14 +56,13 @@ function generate(input,src){
    if(d)push(d,{...content(r),kind:'content',locked:true});
   }
  }
- const flexible=i.preferences.filter(f=>!fixed.has(f)),available=i.cadence-slots.length,used=new Set(),alloc=Object.fromEntries(i.preferences.map(k=>[k,slots.filter(s=>s.family===k&&s.kind==='content').length]));
- if(available<flexible.length)throw Error('Your events, newsletters and selected recurring pieces leave '+Math.max(0,available)+' flexible slots. Choose quarterly newsletters, fewer events/options, or 72 touches. All choices must fit within '+i.cadence+' touches.');
+ const flexible=i.preferences.filter(f=>!fixed.has(f)),available=Math.max(flexible.length,i.cadence-slots.length),used=new Set(),alloc=Object.fromEntries(i.preferences.map(k=>[k,slots.filter(s=>s.family===k&&s.kind==='content').length]));
  const limits={market_review:12,buyer_opportunity:4,seller_opportunity:4};
  for(let n=0;n<available;n++){
-  const families=flexible.filter(k=>alloc[k]<(limits[k]||Math.min(12,pool(k).length)));if(!families.length)throw Error('Select more content variety to fill your '+i.cadence+' touches, or choose 36 touches.');
+  const families=flexible.filter(k=>alloc[k]<(limits[k]||Math.min(12,pool(k).length)));if(!families.length)break;
   families.sort((a,b)=>alloc[a]-alloc[b]||hash(i.seed+a)-hash(i.seed+b));const family=families[0],candidates=pool(family).filter(r=>!used.has(r.id)||family==='market_review'),r=candidates[hash(i.seed+':'+family+':'+alloc[family])%candidates.length];used.add(r.id);alloc[family]++;
   let best,score=-Infinity;for(let month=0;month<12;month++)for(const day of [10,15,20,25,28]){const d=date(y,m-1+month,day);if(slots.some(s=>s.kind==='content'&&s.month===month&&s.family===family))continue;if(['buyer_opportunity','seller_opportunity'].includes(family)&&slots.some(s=>s.family===family&&Math.floor(s.month/3)===Math.floor(month/3)))continue;const distance=Math.min(...slots.map(s=>Math.abs(Date.parse(s.date)-Date.parse(d))/86400000)),value=distance-slots.filter(s=>s.month===month).length*.3;if(value>score){score=value;best=d;}}
-  if(!best)throw Error('Choose more varied content preferences to space your plan well.');push(best,{...content(r),kind:'content',locked:false});
+  if(!best)break;push(best,{...content(r),kind:'content',locked:false});
  }
  slots.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
  return{version:VERSION,sourceSignature:src.signature,input:i,blueprint:gps.blueprintName,start:gps.input.start,mets:gps.input.mets,goal:gps.goal,databaseGrowth:gps.database.monthly,slots,quarters,calls:gps.input.mets*4,weeklyCalls:Math.max(10,Math.ceil(gps.input.mets*4/gps.goal.weeks)),segments:segmentCounts(i,gps.input.mets),counts:{total:slots.length,quarterly:4,newsletters:slots.filter(s=>s.kind==='newsletter').length,eventAdditional:slots.filter(s=>s.kind.startsWith('event')).length,content:slots.filter(s=>s.kind==='content').length},channels:Object.fromEntries(['MAILER','EMAIL','TEXT VIDEO','TEXT','CALL','IN PERSON'].map(k=>[k,slots.filter(s=>s.channel===k).length])),allocation:Object.fromEntries(i.preferences.map(k=>[k,slots.filter(s=>s.kind==='content'&&s.family===k).length]))};
@@ -72,3 +71,5 @@ function alternatives(p,id){const s=p.slots.find(x=>x.id===id);if(!s||s.locked)r
 function replace(p,id,rid){const r=alternatives(p,id).find(r=>r.id===rid);if(!r)throw Error('Choose an available alternative for this touch.');return{...p,slots:p.slots.map(s=>s.id===id?{...s,...content(r),notes:''}:s)};}
 root.LBDTouch={VERSION,GROUPS,INTENTS,SEGMENTS,CATEGORIES,defaults,dates,validate,segmentCounts,source,generate,alternatives,replace};
 })(typeof window==='undefined'?globalThis:window);
+
+
