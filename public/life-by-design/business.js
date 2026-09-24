@@ -237,6 +237,12 @@ $('export').addEventListener('click',()=>{const a=document.createElement('a'),u=
 window.addEventListener('storage',e=>{if(e.key===LIFE){readLife();render();}});
 window.addEventListener('focus',()=>{readLife();numbers();});
 if(window.visualViewport)visualViewport.addEventListener('resize',()=>document.body.classList.toggle('keyboard-open',window.innerHeight-visualViewport.height>150));
+// An explicit Save & Continue from Life by Design replaces a previous manual target.
+const entryUrl=new URL(location.href);
+if(entryUrl.searchParams.get('source')==='life'&&life.value){
+ s.goalMode='life';s.saved=null;
+ entryUrl.searchParams.delete('source');history.replaceState(null,'',entryUrl);
+}
 s.page=0;
 if(window.__LBD_TEST__)window.__BUSINESS={getState:()=>s,getGoal:goal,go,render};
 persist();render();

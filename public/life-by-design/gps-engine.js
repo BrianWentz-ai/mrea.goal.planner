@@ -16,7 +16,7 @@ function validate(input){
  if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.start||'')||+input.start.slice(0,4)<2000||+input.start.slice(0,4)>2100)throw Error('Choose a valid starting month between 2000 and 2100.');
  if(!Number.isInteger(input.mets)||input.mets<0||input.mets>1000000)throw Error('Enter your current met database size as a whole number, including zero.');
  if(!Number.isFinite(input.returnRate)||input.returnRate<1||input.returnRate>10)throw Error('Choose an annual database return between 1% and 10%.');
- if(input.relationshipStage){const bounds={new:[1,3],developing:[5,5],mature:[5,10]}[input.relationshipStage];if(!bounds||input.returnRate<bounds[0]||input.returnRate>bounds[1])throw Error('Choose a return within your relationship development stage’s range.');}
+ if(input.relationshipStage&&!['new','developing','mature'].includes(input.relationshipStage))throw Error('Choose your relationship development stage.');
  if(!Number.isInteger(input.minutes)||input.minutes<15||input.minutes>480)throw Error('Enter daily lead-generation time between 15 and 480 minutes.');
 }
 function generate(input,src){

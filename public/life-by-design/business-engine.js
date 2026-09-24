@@ -33,7 +33,7 @@ function defaults(target=100000){
  referredClosings:1,referralFeePercent:25,referralPercent:0,referralShare:0,sellerReferralPercent:0,sellerReferralShare:0,buyerReferralPercent:0,buyerReferralShare:0,leadPercent:10,budgets:{},actuals:{},
  fixed:BASE.fixed.map(([id,name,cost,hint])=>({id,name,hint,monthly:Math.round(cost/12*100)/100,custom:false})),
  variable:[{id:'tc-seller',name:'Seller transaction coordinator',amount:0,basis:'closing',scope:'seller'},
- {id:'photos-seller',name:'Listing photos / preparation',amount:0,basis:'signed',scope:'seller'},
+ {id:'photos-seller',name:'Listing photos / preparation',amount:200,basis:'signed',scope:'seller'},
  {id:'gifts-seller',name:'Seller closing gifts',amount:0,basis:'closing',scope:'seller'},
  {id:'tc-buyer',name:'Buyer transaction coordinator',amount:0,basis:'closing',scope:'buyer'},
  {id:'gifts-buyer',name:'Buyer closing gifts',amount:0,basis:'closing',scope:'buyer'}],saved:null};
